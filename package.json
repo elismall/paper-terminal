@@ -2,5 +2,10 @@
   "name": "tradebot-terminal",
   "private": true,
   "type": "module",
-  "engines": { "node": "22.x" }
+  "engines": { "node": "22.x" },
+  "scripts": {
+    "audit": "node --test \"test/*.test.js\"",
+    "test": "node --test \"test/*.test.js\"",
+    "dev": "node scripts/dev-server.mjs"
+  }
 }

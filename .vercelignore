@@ -2,3 +2,10 @@
 README.md
 DISCLAIMER.md
 LICENSE
+# Repo-only files: never served by the deployed site (test/repo.test.js checks this list)
+HANDOFF.md
+CLAUDE.md
+test/
+scripts/
+.claude/
+.github/
