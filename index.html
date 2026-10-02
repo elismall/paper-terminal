@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#000000">
+<title>Paper Terminal</title>
+<link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Paper Terminal">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,600..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<header>
+  <div class="fbar">
+    <form class="cmd" id="cmdform" autocomplete="off"><span>&gt;</span><input id="cmd" placeholder="Search: ticker or company, e.g. NVDA, Apple, BTC" aria-label="Search tickers" autocomplete="off" autocapitalize="characters" spellcheck="false" role="combobox" aria-controls="sugg"><b>GO</b><div class="sugg" id="sugg" role="listbox" hidden></div></form>
+    <button class="act" id="refresh" title="Refresh everything now"><em>91)</em>Refresh</button>
+    <button class="act" id="openSettings"><em>92)</em>Settings</button>
+    <div class="brand">PAPER TERMINAL</div>
+  </div>
+  <div class="sline">
+    <span class="w">US Equities · Crypto · Options</span>
+    <span class="chip c-closed" id="mkt">Market —</span>
+    <span id="clock" class="num">--:--:-- ET</span>
+    <span class="chip live" id="livechip" hidden>Live</span>
+    <span id="upd" class="muted num"></span>
+  </div>
+  <div class="tape" id="tape" aria-label="Market tape"></div>
+  <nav class="tabs" role="tablist" aria-label="Screens"></nav>
+</header>
+
+<main id="main"></main>
+
+<footer>
+  <span>Data: Alpaca (IEX stock feed, indicative options, crypto), SEC EDGAR, FRED. Free-tier data can be incomplete or delayed.</span>
+  <span>Research tool, not financial advice. Scores are rule-based screens, not predictions. Check earnings dates and size every trade to a loss you can take.</span>
+</footer>
+
+<div class="ov" id="detail" hidden><div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Symbol detail"></div></div>
+<div class="ov" id="settings" hidden style="justify-content:center;align-items:center"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="st-h">
+  <h2 id="st-h">Settings</h2>
+  <div class="field"><label for="pass">Passcode</label><input class="in" id="pass" type="password" autocomplete="current-password" placeholder="The DASH_PASSCODE you set in Vercel"><small id="passnote">Signs this device in for 7 days (a secure cookie; the passcode itself is never stored). 5 wrong tries lock this device out for 15 minutes.</small><div id="passmsg" class="amber" style="font-size:12.5px" hidden></div></div>
+  <div class="field"><label for="riskSwing">Risk per swing trade ($)</label><input class="in" id="riskSwing" type="number" min="50" step="50"><small>Share counts are sized so a stop-out loses about this much.</small></div>
+  <div class="field"><label for="riskDay">Risk per intraday trade ($)</label><input class="in" id="riskDay" type="number" min="50" step="50"></div>
+  <div class="field"><label for="watch">Watchlist (comma separated)</label><input class="in" id="watch" placeholder="AAPL, NVDA, BTC/USD"></div>
+  <div class="field"><span>Phone notifications</span><div class="checks" id="pushbox">Checking…</div></div>
+  <div class="field"><span>Setup checklist</span><div class="checks" id="checks">Checking…</div></div>
+  <div class="row" style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" id="closeSettings">Cancel</button><button class="btn primary" id="saveSettings">Save</button></div>
+</div></div>
+
+<div class="ov" id="ticket" hidden style="justify-content:center;align-items:center"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="tk-h" id="tkbox"></div></div>
+
+<div class="ov" id="cmax" hidden><div class="cmax" role="dialog" aria-modal="true" aria-labelledby="cmax-t"><div class="cmaxh"><b id="cmax-t"></b><span class="muted">Scroll or pinch to zoom · drag to pan · double-click resets</span><button class="btn" id="cmax-x">&#x2715; Close</button></div><div id="cmax-c" class="cmaxc"></div></div></div>
+
+<script src="/js/1-core.js"></script>
+<script src="/js/2-views.js"></script>
+<script src="/js/3-trade-bot-crypto.js"></script>
+<script src="/js/3b-dca.js"></script>
+<script src="/js/3c-control.js"></script>
+<script src="/js/3d-jev.js"></script>
+<script src="/js/3e-news.js"></script>
+<script src="/js/3f-history.js"></script>
+<script src="/js/3g-dcalab.js"></script>
+<script src="/js/3h-live.js"></script>
+<script src="/js/3i-dca.js"></script>
+<script src="/js/3j-catalyst.js"></script>
+<script src="/js/3k-ledgers.js"></script>
+<script src="/js/4-search-init.js"></script>
+</body>
+</html>

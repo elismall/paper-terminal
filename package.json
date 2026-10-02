@@ -1,0 +1,6 @@
+{
+  "name": "tradebot-terminal",
+  "private": true,
+  "type": "module",
+  "engines": { "node": "22.x" }
+}
