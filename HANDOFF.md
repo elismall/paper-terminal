@@ -87,4 +87,22 @@ reads only, reports verified findings with severity and a fix, and files each as
   now ships daily backups only and the README uses cron-job.org every 15 minutes.
 - `lib/history.js` and `lib/season.js` mention `docs/RESULTS-LOG.md`, which is not in the repo.
 - No unit tests or CI yet; `scripts/check.mjs` is the only automated check.
-- Audit findings: see the GitHub issues labeled `audit`.
+
+### Audit findings (first pass, 2026-10-02; GitHub issues labeled `audit`)
+
+| Issue | Severity | Finding |
+|---|---|---|
+| #2 | high | Kill switch fails open when the Blob read fails |
+| #3 | high | One failed Blob read wipes stored history and push devices |
+| #4 | high | Overlapping bot runs can duplicate orders and double the live cap |
+| #5 | high | Passcode lockout can be bypassed with parallel guesses |
+| #6 | medium | DCA dip buys keep firing while paused or in drawdown |
+| #7 | medium | Live cap undercounts and misses some order shapes |
+| #8 | medium | Daily backup cron misses the 7 PM evening run in winter |
+| #9 | medium | Account data and push keys live in a public Blob store |
+| #10 | medium | Anyone can lock the owner out of signing in on new devices |
+| #11 | low | Health check tells strangers whether the passcode is weak |
+| #12 | low | Core Alpaca, order and Blob fetches have no timeout |
+| #13 | low | Hardening: sign-out, state-changing GETs, push hosts, storage cleanup |
+
+Close the issue and remove its row when the fix merges.
