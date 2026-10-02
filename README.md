@@ -174,6 +174,12 @@ arrow), then **Install**.
 | `SEC_USER_AGENT` | company financials from the SEC. Value: your name and email, like `Jane Doe jane@example.com` | Free, no account |
 | `APP_NAME` | the name shown on screen | Free |
 | `TYPESAFE_API_KEY` | Jev, an AI second opinion that rates each setup (it never places orders) | Paid per use by TypeSafe; skip it at first |
+| `JEV_MODE` | What Jev's opinion does. Leave it empty (or `shadow`) and Jev only writes notes. `gate` lets Jev skip weak setups and halve doubtful ones. `off` turns Jev off. Only switch to `gate` once Jev's scorecard (Jev tab) shows it helps | Free (Jev itself is paid per use) |
+| `JEV_MODEL` | Which Jev version to ask. Leave it empty unless TypeSafe tells you a new name | Free |
+| `NEWS_MODE` | What the news check does. Leave it empty (or `shadow`) and news is only written down next to each trade. `gate` lets bad news (an offering, a downgrade) skip a stock trade. `off` turns news off | Free |
+| `LEVERAGE_MODE` | What the crypto crowding check does. Leave it empty (or `shadow`) and it is only written down. `gate` holds back new crypto DCA deals when too many traders are betting on a rise with borrowed money. `off` turns it off | Free |
+| `CRYPTO_SWING` | `on` lets the crypto swing bot open new trades. Leave it empty and crypto is only bought through the DCA bot | Free |
+| `VAPID_SUBJECT` | The contact sent along with phone notifications, like `mailto:you@example.com`. Leave it empty and your app's own address is used | Free |
 
 Add any of them in Vercel → Settings → Environment Variables, then redeploy.
 

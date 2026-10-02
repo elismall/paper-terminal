@@ -87,6 +87,7 @@ What `npm run audit` covers:
 - `test/repo.test.js` (drift check): routes wired; every handler has an auth check and POST/DELETE are strict; CSP and headers;
   `index.html` scripts match `js/`; no eval or committed keys; `.env.example` matches the code both ways; the version here
   matches `lib/version.js`; `.vercelignore` covers repo-only files; every file parses.
+  Also: README names every setting in `.env.example`, and no export in `lib/` or `routes/` goes unused.
 - `test/devserver.test.js`: the dev server refuses dotfiles, repo-only files, traversal and bad escapes, and keeps running.
 
 ## Outside hosts the server calls
@@ -104,6 +105,11 @@ with scope "full".
 - v0.17.2 adds the audit, CI, the auditor agent, the steward skill, this file, `CLAUDE.md` and the dev server. App changes:
   the router dispatches only to its own route names (`?__p=__proto__` now 404, was 405), and `.env.example` lists six settings
   the server already read. This combines two earlier efforts (PR #1 and PR #14) into one.
+- Drift check fixes (2026-10-02, evening): the README "Optional extras" table now lists `JEV_MODE`, `JEV_MODEL`, `NEWS_MODE`,
+  `LEVERAGE_MODE`, `CRYPTO_SWING` and `VAPID_SUBJECT`. Unused exports were **deleted**, not tested, because nothing called them:
+  `resetCalendar` (lib/calendar.js), `feedReset` (lib/core.js), `_resetFeeMemo` (lib/fees.js), `experimentAt`
+  (lib/experiments.js), `STATUS_LABEL` (lib/ledger.js), `LIQ_TXT` (lib/macro.js); `TRAIN_KEY` in lib/dca.js is now a private
+  `KEY`. The audit now fails on any new unused export and on a setting missing from the README.
 - Verified in a Claude cloud session: `npm run audit` passes on Node 22 locally and in CI; the dev server serves the UI and the
   router answers (`/api/health` 200, `/api/account` 401, unknown route 404).
 - Not verifiable there: market data and bots, because that sandbox has no Alpaca keys and blocks the hosts above.

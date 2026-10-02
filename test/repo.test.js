@@ -69,6 +69,12 @@ test('.env.example documents every setting the server reads', () => {
   assert.deepEqual(unused, [], 'these are in .env.example but no server code reads them: remove them or wire them up');
 });
 
+test('README names every setting in .env.example (the owner sets them from the README)', () => {
+  const readme = read('README.md');
+  const missing = [...read('.env.example').matchAll(/^([A-Z0-9_]+)=/gm)].map(m => m[1]).filter(k => !readme.includes('`' + k + '`'));
+  assert.deepEqual(missing, [], 'add these to README.md (Optional extras table or the setup steps)');
+});
+
 test('one version everywhere, and the handoff names it', () => {
   const v = /VERSION = '(\d+\.\d+\.\d+)'/.exec(read('lib/version.js'))?.[1];
   assert.ok(v, 'lib/version.js VERSION must be x.y.z');
@@ -85,4 +91,16 @@ test('repo-only files are kept off the public site', () => {
 
 test('every server, browser and script file parses', () => {
   for (const f of [...SERVER, ...ls('js').map(f => `js/${f}`), ...SCRIPTS, 'sw.js']) execFileSync(process.execPath, ['--check', new URL(`../${f}`, import.meta.url).pathname]);
+});
+
+test('no dead exports: every export in lib/ and routes/ is used somewhere', () => {
+  // Counts every mention outside the declaration, in any server, browser or test file (spread `...name` counts; `x.name` does not).
+  const files = [...SERVER, ...ls('js').map(f => `js/${f}`), ...readdirSync(new URL('./', import.meta.url)).filter(f => f.endsWith('.js')).map(f => `test/${f}`)];
+  const src = files.map(read), dead = [];
+  for (const f of SERVER) for (const [, name] of read(f).matchAll(/^export (?:async )?(?:const|function|let|class) ([A-Za-z_$][\w$]*)/gm)) {
+    if (['GET', 'POST', 'DELETE'].includes(name)) continue;
+    const re = new RegExp(`(?<![\\w$]|[^.]\\.)${name.replace(/\$/g, '\\$')}(?![\\w$])`, 'g');
+    if (src.reduce((n, s) => n + (s.match(re) || []).length, 0) < 2) dead.push(`${f} ${name}`);
+  }
+  assert.deepEqual(dead, [], 'delete these, or use or test them');
 });
