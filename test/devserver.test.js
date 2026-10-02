@@ -13,7 +13,7 @@ const get = async (path) => { const p = await port; return new Promise((ok, no) 
 
 test('dev server refuses dotfiles, repo-only files and traversal, and survives bad escapes', async () => {
   for (const p of ['/%E0', '/.env', '/.env.example', '/.git/config', '/.vercelignore', '/%2e%2e/%2e%2e/etc/passwd', '/../../etc/passwd', '/HANDOFF.md', '/handoff.md',
-    '/CLAUDE.md', '/test/helpers.js', '/scripts/dev-server.mjs', '/.claude/agents/steward.md', '/README.md']) assert.ok([400, 404].includes(await get(p)), p);
+    '/CLAUDE.md', '/test/helpers.js', '/scripts/dev-server.mjs', '/.claude/skills/steward/SKILL.md', '/.claude/agents/adversary-auditor.md', '/README.md']) assert.ok([400, 404].includes(await get(p)), p);
   assert.equal(await get('/'), 200, 'still up and serving the app');
   assert.equal(await get('/api/account'), 401);
 });
