@@ -8,6 +8,7 @@ import { execFileSync } from 'node:child_process';
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
 const ls = (d) => readdirSync(new URL(`../${d}/`, import.meta.url)).filter(f => f.endsWith('.js'));
 const SERVER = [...ls('lib').map(f => `lib/${f}`), ...ls('routes').map(f => `routes/${f}`), 'api/router.js'];
+const SCRIPTS = readdirSync(new URL('../scripts/', import.meta.url)).filter(f => /\.m?js$/.test(f)).map(f => `scripts/${f}`);
 const handlers = (src) => [...src.matchAll(/export (?:async )?(?:function|const) (GET|POST|DELETE)\b([\s\S]*?)(?=\nexport |$)/g)].map(m => ({ method: m[1], body: m[2] }));
 
 test('every route file is wired into the router, and the router names no missing file', () => {
@@ -60,10 +61,12 @@ test('no eval, no secrets in the browser code, no keys committed', () => {
 });
 
 test('.env.example documents every setting the server reads', () => {
-  const used = new Set(SERVER.flatMap(f => [...read(f).matchAll(/env\('([A-Z_]+)'\)/g)].map(m => m[1])));
+  const used = new Set(SERVER.flatMap(f => [...read(f).matchAll(/env\('([A-Z0-9_]+)'\)|process\.env\.([A-Z0-9_]+)/g)].map(m => m[1] || m[2])));
   const documented = new Set([...read('.env.example').matchAll(/^([A-Z_]+)=/gm)].map(m => m[1]));
   const missing = [...used].filter(k => !documented.has(k) && !k.startsWith('VERCEL_')); // VERCEL_* are set by Vercel itself
   assert.deepEqual(missing, [], 'add these to .env.example');
+  const unused = [...documented].filter(k => !used.has(k));
+  assert.deepEqual(unused, [], 'these are in .env.example but no server code reads them: remove them or wire them up');
 });
 
 test('one version everywhere, and the handoff names it', () => {
@@ -80,6 +83,6 @@ test('repo-only files are kept off the public site', () => {
   }
 });
 
-test('every server file parses', () => {
-  for (const f of [...SERVER, ...ls('js').map(f => `js/${f}`), 'sw.js']) execFileSync(process.execPath, ['--check', new URL(`../${f}`, import.meta.url).pathname]);
+test('every server, browser and script file parses', () => {
+  for (const f of [...SERVER, ...ls('js').map(f => `js/${f}`), ...SCRIPTS, 'sw.js']) execFileSync(process.execPath, ['--check', new URL(`../${f}`, import.meta.url).pathname]);
 });
