@@ -5,7 +5,7 @@ the code, the rules that keep it safe, and what is open. **Keep it current:** an
 paths or the version updates this file in the same commit. The `steward` skill (`.claude/skills/steward/SKILL.md`) says how,
 and `npm run audit` fails if the version below is stale.
 
-**Current version:** 0.17.2 (`lib/version.js`; bump it with every deploy). Owner: Eli (`elismall`).
+**Current version:** 0.17.3 (`lib/version.js`; bump it with every deploy). Owner: Eli (`elismall`).
 Repo: https://github.com/elismall/paper-terminal
 
 ## What it is
@@ -88,6 +88,8 @@ What `npm run audit` covers:
   `index.html` scripts match `js/`; no eval or committed keys; `.env.example` matches the code both ways; the version here
   matches `lib/version.js`; `.vercelignore` covers repo-only files; every file parses.
   Also: README names every setting in `.env.example`, and no export in `lib/` or `routes/` goes unused.
+- `test/killswitch.test.js`: an unreadable kill switch or lock blocks new trades instead of reading as "run"; nothing
+  overwrites the saved state or deletes another run's lock after a failed read.
 - `test/devserver.test.js`: the dev server refuses dotfiles, repo-only files, traversal and bad escapes, and keeps running.
 
 ## Outside hosts the server calls
@@ -102,6 +104,10 @@ as a GitHub issue labeled `audit`. Run it on every change to auth, orders, sizin
 with scope "full".
 
 ## Status as of 2026-10-02
+- v0.17.3 (2026-10-05, weekly audit): fixes [#2](https://github.com/elismall/paper-terminal/issues/2). `blobGet(..., { strict: true })`
+  returns null only on a confirmed 404 and throws on any other failure. The kill switch, the run lock and `checkLock` use it, so a
+  storage outage now means "no new trades this run" (ladder level 3) instead of "run", `migrateMode` never overwrites a state it
+  could not read, and `acquireLock` never deletes a lock it could not read. The Bot tab shows mode `unknown` in that case.
 - v0.17.2 adds the audit, CI, the auditor agent, the steward skill, this file, `CLAUDE.md` and the dev server. App changes:
   the router dispatches only to its own route names (`?__p=__proto__` now 404, was 405), and `.env.example` lists six settings
   the server already read. This combines two earlier efforts (PR #1 and PR #14) into one.
@@ -128,7 +134,7 @@ with scope "full".
 
 | Issue | Severity | Finding |
 |---|---|---|
-| [#2](https://github.com/elismall/paper-terminal/issues/2) | high | Kill switch fails open when the Blob read fails |
+| [#2](https://github.com/elismall/paper-terminal/issues/2) | high | Kill switch fails open when the Blob read fails (**fixed in v0.17.3**) |
 | [#3](https://github.com/elismall/paper-terminal/issues/3) | high | One failed Blob read wipes stored history and push devices |
 | [#4](https://github.com/elismall/paper-terminal/issues/4) | high | Overlapping bot runs can duplicate orders and double the live cap |
 | [#5](https://github.com/elismall/paper-terminal/issues/5) | high | Passcode lockout can be bypassed with parallel guesses |

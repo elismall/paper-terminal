@@ -19,7 +19,7 @@ function controlPaint(fromLoad) {
   const sub = (x) => `<div class="muted" style="font-size:11.5px">${x}</div>`;
   const paused = c.mode === 'pause', L = c.last, lv = CT_LEVEL[L?.level] || ['—', 'muted'];
   const when = (t) => t ? new Date(t).toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' ET' : '';
-  const modeTxt = paused ? `<b class="down">${c.by === 'auto' ? 'Auto-paused' : 'Paused'}</b>${sub(`${esc(c.reason || '')} · ${when(c.at)}`)}` : `<b class="up">Running</b>${sub('new trades allowed')}`;
+  const modeTxt = paused ? `<b class="down">${c.by === 'auto' ? 'Auto-paused' : 'Paused'}</b>${sub(`${esc(c.reason || '')} · ${when(c.at)}`)}` : c.mode === 'unknown' ? `<b class="amber">Unknown</b>${sub(esc(c.reason || ''))}` : `<b class="up">Running</b>${sub('new trades allowed')}`;
   const J = c.jev || {}, jevTxt = !J.key ? `<b class="muted">Off</b>${sub('no TYPESAFE_API_KEY in Vercel yet')}`
     : J.mode === 'gate' ? `<b class="up">Gate</b>${sub(`${esc(J.model)} · skips weak setups, halves doubtful ones`)}`
     : J.mode === 'shadow' ? `<b class="amber">Shadow</b>${sub(`${esc(J.model)} · reads each chart as numbers, scores every new trade and reviews open ones; changes nothing yet (scorecard on the Jev tab)${c.review?.n ? ` · last review ${c.review.n} trade${c.review.n === 1 ? '' : 's'}` : ''}`)}`
