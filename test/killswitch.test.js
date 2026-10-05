@@ -49,6 +49,17 @@ test('a lock read error is unconfirmed (no new trades), and never deletes the ho
   assert.ok(!calls.some(c => c.url.includes('/delete')), 'must not delete a lock it could not read');
 });
 
+test('a 404 at the guessed URL never overwrites a mode.json the store lists', async () => {
+  setEnv(STORE);
+  const realUrl = 'https://realstore.public.blob.vercel-storage.com/control/mode.json';
+  const calls = storage({
+    read: (url) => url.startsWith(realUrl) ? res(200, { mode: 'pause', by: 'you' }) : res(404),
+    api: (url) => url.includes('prefix=') ? res(200, { blobs: [{ pathname: 'control/mode.json', url: realUrl }] }) : res(500),
+  });
+  assert.equal((await getMode({ fresh: true })).mode, 'pause');
+  assert.deepEqual(writes(calls), []);
+});
+
 test('a confirmed-missing state still reads as "run" (fresh install)', async () => {
   setEnv(STORE);
   storage({ read: () => res(404), api: (url) => url.includes('prefix=') ? res(200, { blobs: [] }) : res(200, { url: 'https://teststore.public.blob.vercel-storage.com/control/mode.json' }) });

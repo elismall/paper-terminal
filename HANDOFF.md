@@ -103,11 +103,12 @@ on <area or diff>". It reads only, reports verified findings with severity, a fi
 as a GitHub issue labeled `audit`. Run it on every change to auth, orders, sizing, the kill switch, cron or storage, and weekly
 with scope "full".
 
-## Status as of 2026-10-02
+## Status as of 2026-10-05
 - v0.17.3 (2026-10-05, weekly audit): fixes [#2](https://github.com/elismall/paper-terminal/issues/2). `blobGet(..., { strict: true })`
   returns null only on a confirmed 404 and throws on any other failure. The kill switch, the run lock and `checkLock` use it, so a
-  storage outage now means "no new trades this run" (ladder level 3) instead of "run", `migrateMode` never overwrites a state it
-  could not read, and `acquireLock` never deletes a lock it could not read. The Bot tab shows mode `unknown` in that case.
+  storage outage now means "no new trades this run" (ladder level 3) instead of "run", and `acquireLock` never deletes a lock it
+  could not read. `migrateMode` writes only when the read was a 404 **and** the store's listing has no `control/mode.json`; if the
+  listing has it (the guessed store address was wrong), it reads it at its real URL and learns that address. The Bot tab shows mode `unknown` in that case.
 - v0.17.2 adds the audit, CI, the auditor agent, the steward skill, this file, `CLAUDE.md` and the dev server. App changes:
   the router dispatches only to its own route names (`?__p=__proto__` now 404, was 405), and `.env.example` lists six settings
   the server already read. This combines two earlier efforts (PR #1 and PR #14) into one.
@@ -121,6 +122,8 @@ with scope "full".
 - Not verifiable there: market data and bots, because that sandbox has no Alpaca keys and blocks the hosts above.
 
 ## Known drift and open items
+- Unverified: what a public Blob URL returns when a Hobby store is locked for quota. If it is 404, the kill switch reads as a
+  fresh install ("run"); the listing check in `migrateMode` still blocks an overwrite only if listing works while locked.
 - Header comments in `lib/schedule.js` and `routes/tick.js` still describe a Vercel Pro `*/5` cron; `vercel.json` now ships daily
   backups only and the README uses cron-job.org every 15 minutes.
 - `lib/history.js` and `lib/season.js` mention `docs/RESULTS-LOG.md`, which is not in the repo.
