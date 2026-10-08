@@ -67,3 +67,17 @@ test('describe gives a trigger and an exit level in plain words', () => {
 test('options cheap or expensive vs how much the stock moved', () => {
   assert.equal(ivLabel(30, 40), 'cheap'); assert.equal(ivLabel(45, 40), 'fairly priced'); assert.equal(ivLabel(80, 40), 'expensive'); assert.equal(ivLabel(null, 40), null);
 });
+
+test('a breakout at the open is not flagged on ordinary early volume', () => {
+  const b = series(), x = lastOf(b), hi = Math.max(...b.slice(-21, -1).map(y => y.h));
+  Object.assign(x, { o: hi - 0.5, c: hi + 1, h: hi + 1.2, l: hi - 0.6, v: 1.3e5 });
+  assert.ok(!keys(b, 30 / 390).includes('breakout'));
+});
+
+test('range patterns: the average move is measured where the range broke', () => {
+  const b = series(400);
+  const j = 250, c = b[j].c; Object.assign(b[j], { o: c, h: c + 0.2, l: c - 0.2 });
+  b[j + 1].c = c + 3; b[j + 2].c = c - 5; b[j + 3].c = c - 5;   // breaks out up, then falls back below the signal close
+  const h = history(b, 'tight', 'up');
+  assert.ok(h.up >= 1 && h.upAvg > 0, JSON.stringify(h));
+});

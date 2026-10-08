@@ -64,3 +64,12 @@ test('chart mode: no trend means a straddle or strangle (pays if it breaks eithe
   assert.match(j.idea.strategy, /Long (straddle|strangle)/);
   assert.ok(j.idea.beUp > j.px && j.idea.beDown < j.px && j.idea.maxLoss > 0);
 });
+
+test('chart mode fetches each option chain once, skips a second snapshot, and caches per stock', async () => {
+  seen.length = 0; B.ONCE = daily(0.4, 280, -0.4);
+  const j = await chart('ONCE'), opt = seen.filter(p => p.includes('/v1beta1/options/'));
+  assert.match(j.idea.strategy, /Long (straddle|strangle)/);
+  assert.equal(opt.length, 2, 'one call chain and one put chain: ' + opt.join(' '));
+  assert.equal(seen.filter(p => p.endsWith('/v2/stocks/snapshots')).length, 2, 'one snapshot lookup (inside the bars step; real-time + delayed feed)');
+  const n = seen.length; await chart('ONCE'); assert.equal(seen.length, n, 'a second read within 5 minutes costs no Alpaca calls');
+});

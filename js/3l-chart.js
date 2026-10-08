@@ -50,7 +50,7 @@ function chartPaint() {
 }
 // One stock at a time (the free data plan allows 200 requests a minute, shared with the bots). A failed read is retried after a minute.
 async function chartScan() {
-  if (CH.busy || !cfg.authed) return; CH.busy = true;
+  if (CH.busy) return; CH.busy = true;
   try {
     for (const s of chartList()) {
       const c = CH.cache[s]; if (c && Date.now() - c.ts < (c.j?.error ? 6e4 : CH_TTL)) continue;
