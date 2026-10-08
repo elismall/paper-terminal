@@ -1,10 +1,12 @@
-import { json, denied, fail, needKeys, authorized, hasAlpaca, snapshots, quoteOf, round } from '../lib/core.js';
-import { chain, dte, pickExpiry, ymd, longIdeas, impliedMove, debitSpread } from '../lib/options.js';
+import { json, denied, fail, needKeys, authorized, hasAlpaca, snapshots, quoteOf, round, bars, stdevRet, marketSession } from '../lib/core.js';
+import { chain, dte, pickExpiry, ymd, longIdeas, impliedMove, debitSpread, straddle } from '../lib/options.js';
+import { patternsAt, history, describe, ivLabel, PATTERN } from '../lib/patterns.js';
 import { earningsInfo } from '../lib/news.js';
 // Option ideas built from a directional view.
 //  ?symbol=AAPL&dir=long&target=250      -> vertical debit spread (call for long, put for short)
 //  ?symbol=AAPL&strategy=call&target=250 -> long call at three strikes (v0.13.0); strategy=put -> long put
 //  ?symbol=AAPL&strategy=csp              -> cash-secured put about 7% below price
+//  ?symbol=AAPL&strategy=chart            -> reads the daily chart (lib/patterns.js) and builds one play that fits (v0.18.0)
 // v0.13.0: every call / put idea says when the next earnings report is expected (estimated from SEC filings) if the expiry spans it,
 // and long calls / puts also show the move the options price in by then.
 // Free plan = indicative feed: quotes are derived from OPRA and trades are 15 minutes delayed.
@@ -20,6 +22,7 @@ export async function GET(req) {
     if (!q?.p) return json({ error: 'no_quote', message: `No quote for ${sym}` }, { status: 404 });
     const px = q.p, today = new Date();
     const strategy = u.get('strategy') || 'debit';
+    if (strategy === 'chart') return json(await chartPlay(sym, px), { cache: 300, swr: 900 });
     if (strategy === 'call' || strategy === 'put') {
       const tgt = +u.get('target') || null, want = Math.min(120, Math.max(10, +u.get('dte') || 35));
       const L = await longIdeas(sym, px, { dir: strategy === 'put' ? 'short' : 'long', want, target: tgt });
@@ -45,4 +48,33 @@ export async function GET(req) {
     if (!S.idea) return json({ s: sym, px, idea: null, message: S.message }, { cache: /sensible/.test(S.message) ? 120 : 300 });
     return json({ s: sym, px: round(px), idea: { ...S.idea, earn: await earnFlag(sym, S.idea.exp) }, feed: 'indicative', at: new Date().toISOString() }, { cache: 300, swr: 900 });
   } catch (e) { return fail(e, 'options'); }
+}
+
+// v0.18.0: "Plays from the chart". The pattern on the daily chart (today's candle so far counts while the market is open), what the
+// same pattern did before on this stock, and one play: straddle / strangle when it may break either way, else a debit spread, or a
+// long call / put when options are cheap. Ideas only: nothing here places orders.
+const nyDay = (t) => new Date(t).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+async function chartPlay(sym, px) {
+  const b = (await bars([sym], { timeframe: '1Day', days: 800, limitPages: 2 }))[sym] || [];
+  if (b.length < 120) return { s: sym, px: round(px), pattern: null, message: 'Not enough price history for this stock.' };
+  const S = marketSession(), frac = S.open && nyDay(b.at(-1).t) === nyDay(Date.now()) ? Math.max(0, S.frac) : 1;
+  const ps = patternsAt(b, b.length - 1, frac), base = { s: sym, px: round(px), partial: frac < 1, at: new Date().toISOString(), feed: 'indicative' };
+  if (!ps.length) return { ...base, pattern: null, message: 'No clear pattern on the chart right now.' };
+  const p = ps[0], P = PATTERN[p.key], d = describe(p, px), hist = history(b, p.key, p.dir);
+  const rv = round(stdevRet(b.map(x => x.c), 20) * Math.sqrt(252) * 100, 0);
+  const pattern = { key: p.key, name: P.name, dir: p.dir, trend: p.trend, text: d.text, trigger: d.trigger, off: d.off, atr: round(p.atr), also: ps.slice(1).map(x => PATTERN[x.key].name) };
+  let idea = null, message = null, iv = null;
+  if (p.dir === 'either') {
+    let S2 = await straddle(sym, px, { want: P.want }); iv = S2.idea?.call.iv ?? null;
+    if (S2.idea && ivLabel(iv, rv) === 'expensive') { const W = await straddle(sym, px, { want: P.want, wide: true }); if (W.idea) S2 = W; }
+    idea = S2.idea; message = S2.message;
+  } else {
+    const from = p.dir === 'up' ? Math.max(px, p.key === 'tight' || p.key === 'coil' ? p.hi : px) : Math.min(px, p.key === 'tight' || p.key === 'coil' ? p.lo : px);
+    const target = round(from + (p.dir === 'up' ? 2 : -2) * p.atr);
+    const D = await debitSpread(sym, px, { dir: p.dir === 'up' ? 'long' : 'short', target, fromDays: 7, toDays: P.want + 25, want: P.want });
+    iv = D.idea?.buy.iv ?? null; idea = D.idea; message = D.message;
+    if (ivLabel(iv, rv) === 'cheap' || !idea) { const L = await longIdeas(sym, px, { dir: p.dir === 'up' ? 'long' : 'short', want: P.want, target }); if (L.idea) { idea = L.idea; iv ??= L.idea.strikes.find(x => x.label === 'At the money')?.iv ?? null; } else message ??= L.message; }
+  }
+  if (idea) idea.earn = await earnFlag(sym, idea.exp);
+  return { ...base, pattern, history: hist, vol: { iv, rv, label: ivLabel(iv, rv) }, idea, message: idea ? null : message };
 }
