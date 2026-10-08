@@ -1,7 +1,7 @@
 # Please read
 
-**This is software, not advice.** Paper Terminal is a research and practice tool. Nothing it shows (scores, plans, Jev's
-ratings, backtests, the Benchmark tab) is financial, investment, tax or legal advice, and none of it is a promise about future
+**This is software, not advice.** Paper Terminal is a research and practice tool. Nothing it shows (scores, plans, chart
+patterns and option plays, Jev's ratings, backtests, the Benchmark tab) is financial, investment, tax or legal advice, and none of it is a promise about future
 results. Backtests and paper results leave out real-world costs and behavior, and past results do not predict future ones.
 
 **Your copy is yours.** You run your own copy with your own accounts and keys. Nobody else, including the person who shared

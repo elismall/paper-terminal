@@ -98,8 +98,8 @@ function optionsCards(limit) {
 }
 const optionsView = (limit) => (limit ? '' : optForm()) + optionsCards(limit);
 const OPT_NOTE = 'Long calls and puts: the most you can lose is what you pay; in the money moves most like the stock and decays slowest, out of the money is cheaper but needs a bigger move before expiry. Debit spreads cap the loss at what you pay; the long leg targets about 0.60 delta about 35 days out and the short leg sits near the swing target. Cash-secured puts target about 0.25 delta 30–45 days out on long-term picks you would be happy to own. When an expiry spans the next earnings report (estimated from SEC filings) the card says so: implied volatility usually drops right after the report. Free-plan option quotes are indicative, so check live prices with your broker before trading.';
-function optShell() { return `<div class="grid" id="optroot">${typeof catShell === 'function' ? catShell() : ''}${panel('op', '41)', 'Option ideas', 'indicative feed · 15-min delayed trades', optForm() + '<div id="opt-cards"></div>', 'span12', OPT_NOTE)}</div>`; }
-function optPaint() { const c = $('#opt-cards'); if (c) c.innerHTML = optionsCards(0); if (typeof catPaint === 'function') catPaint(); }
+function optShell() { return `<div class="grid" id="optroot">${typeof chartShell === 'function' ? chartShell() : ''}${typeof catShell === 'function' ? catShell() : ''}${panel('op', '41)', 'Option ideas', 'indicative feed · 15-min delayed trades', optForm() + '<div id="opt-cards"></div>', 'span12', OPT_NOTE)}</div>`; }
+function optPaint() { const c = $('#opt-cards'); if (c) c.innerHTML = optionsCards(0); if (typeof catPaint === 'function') catPaint(); if (typeof chartPaint === 'function') chartPaint(); }
 
 /* ---------- render ---------- */
 function setupCard() {
