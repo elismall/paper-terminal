@@ -47,7 +47,7 @@ const handle = (method) => async (req) => {
   if (method !== 'GET' && !sameSite(req)) return json({ error: 'forbidden', message: 'Cross-site request refused.' }, 403);
   const u = new URL(req.url);
   const name = (u.searchParams.get('__p') || u.pathname.replace(/^\/api\//, '')).split('/')[0];
-  const mod = Object.hasOwn(R, name) ? R[name] : null; // v0.17.2: own keys only ('__proto__', 'constructor' are not routes)
+  const mod = Object.hasOwn(R, name) ? R[name] : null; // v0.18.1: own keys only ('__proto__', 'constructor' are not routes)
   if (!mod || name === 'router') return notFound();
   const fn = mod[method];
   if (!fn) return json({ error: 'method_not_allowed' }, 405);

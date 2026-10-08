@@ -5,7 +5,7 @@ the code, the rules that keep it safe, and what is open. **Keep it current:** an
 paths or the version updates this file in the same commit. The `steward` skill (`.claude/skills/steward/SKILL.md`) says how,
 and `npm run audit` fails if the version below is stale.
 
-**Current version:** 0.17.2 (`lib/version.js`; bump it with every deploy). Owner: Eli (`elismall`).
+**Current version:** 0.18.1 (`lib/version.js`; bump it with every deploy). Owner: Eli (`elismall`).
 Repo: https://github.com/elismall/paper-terminal
 
 ## What it is
@@ -101,8 +101,12 @@ on <area or diff>". It reads only, reports verified findings with severity, a fi
 as a GitHub issue labeled `audit`. Run it on every change to auth, orders, sizing, the kill switch, cron or storage, and weekly
 with scope "full".
 
-## Status as of 2026-10-02
-- v0.17.2 adds the audit, CI, the auditor agent, the steward skill, this file, `CLAUDE.md` and the dev server. App changes:
+## Status as of 2026-10-08
+- v0.18.0 (PR #16, merged 2026-10-08) added "Plays from the chart" on the Options tab: `lib/patterns.js` (5 chart patterns plus
+  how often each worked before on that stock), a straddle/strangle builder in `lib/options.js`, `routes/options.js`
+  `strategy=chart` (5-minute per-instance cache) and the `js/3l-chart.js` panel. Ideas only, no order buttons, no bot changes;
+  covered by `test/patterns.test.js` and `test/chartplay.test.js`.
+- v0.18.1 (this audit PR, first opened as v0.17.2) adds the audit, CI, the auditor agent, the steward skill, this file, `CLAUDE.md` and the dev server. App changes:
   the router dispatches only to its own route names (`?__p=__proto__` now 404, was 405), and `.env.example` lists six settings
   the server already read. This combines two earlier efforts (PR #1 and PR #14) into one.
 - Drift check fixes (2026-10-02, evening): the README "Optional extras" table now lists `JEV_MODE`, `JEV_MODEL`, `NEWS_MODE`,
@@ -118,6 +122,8 @@ with scope "full".
 - Header comments in `lib/schedule.js` and `routes/tick.js` still describe a Vercel Pro `*/5` cron; `vercel.json` now ships daily
   backups only and the README uses cron-job.org every 15 minutes.
 - `lib/history.js` and `lib/season.js` mention `docs/RESULTS-LOG.md`, which is not in the repo.
+- From the v0.18.0 review: `earnFlag`'s SEC lookup runs on the non-strict options route (as it did before in the other
+  modes), and the partial-day pattern reads have not been checked against live data.
 - Bot strategy logic (`lib/botcore.js`, `lib/dca.js`, `lib/cryptobot.js`) has no unit tests; the audit covers the money guard
   around it, not the trading decisions.
 - Unverified: `lib/`, `routes/` and `package.json` are not in `.vercelignore`, so Vercel probably serves the server source as

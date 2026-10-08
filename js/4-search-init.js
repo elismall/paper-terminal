@@ -53,9 +53,9 @@ cmdEl.addEventListener('blur', () => setTimeout(() => { $('#sugg').hidden = true
 $('#sugg').addEventListener('mousedown', e => { const b = e.target.closest('.sg'); if (b) { e.preventDefault(); pickSugg(+b.dataset.i); } });
 
 /* ---------- symbol fields: suggestions as you type (v0.13.2) ---------- */
-// Same list and ranking as the top search box, under every ticker field: Option ideas, Catalyst scenario, Ask Jev, the order ticket.
+// Same list and ranking as the top search box, under every ticker field: Plays from the chart, Option ideas, Catalyst scenario, Ask Jev, the order ticket.
 // Arrow keys + Enter or a tap fill the field; Esc closes. Options and Catalyst are stocks only, so crypto is left out there.
-const AC_FIELDS = { 'o-sym': 'stock', 'ca-sym': 'stock', 'jv-sym': 'any', 't-sym': 'any' };
+const AC_FIELDS = { 'o-sym': 'stock', 'c-sym': 'stock', 'ca-sym': 'stock', 'jv-sym': 'any', 't-sym': 'any' };
 const AC = { el: null, list: [], i: -1 };
 (() => { const st = document.createElement('style'); st.textContent = '.acbox{position:fixed;right:auto;top:0;left:0;z-index:60;border-top:2px solid var(--orange);box-shadow:0 8px 24px rgba(0,0,0,.6)}.acbox .sg{grid-template-columns:70px 1fr auto}.jvhead{font:600 15px var(--sans);margin:2px 0 8px}.jvhead .sy{font:700 16px var(--mono);color:var(--orange);margin-right:6px}.jvask>*{min-width:0}@media (max-width:400px){.jvans>div{grid-template-columns:minmax(110px,max-content) minmax(0,1fr)}.jvbar{width:min(160px,30vw)}}'; document.head.appendChild(st); })();
 const acBox = document.createElement('div'); acBox.className = 'sugg acbox'; acBox.id = 'acbox'; acBox.setAttribute('role', 'listbox'); acBox.hidden = true; document.body.appendChild(acBox);
