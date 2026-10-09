@@ -253,6 +253,8 @@ form.inline label{display:grid;gap:3px;font:700 11.5px var(--sans);color:var(--a
 .cbstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px;margin-top:14px;border-top:1px solid var(--cbline);padding-top:14px}
 .cbstats span{display:block;color:var(--cbmut);font-size:12.5px}.cbstats b{font:600 15px system-ui,sans-serif}
 .cbmh{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}.cbmh h3{margin:0}
+/* v0.19.0: Market search (whole crypto market) */
+.cbq{flex:1 1 180px;min-width:0;max-width:320px;background:var(--cbbg);border:1px solid var(--cbline);border-radius:999px;color:#fff;font:500 14px system-ui,sans-serif;padding:8px 14px}.cbq:focus{outline:none;border-color:#4a4f5a}.cbinfo{font-size:12.5px;margin:2px 0 6px}
 .cbt{width:100%;border-collapse:collapse;font:500 14px system-ui,sans-serif}
 .cbt th{background:none;border:0;color:var(--cbmut);font:500 12.5px system-ui,sans-serif;text-align:left;padding:8px 10px;border-bottom:1px solid var(--cbline)}
 .cbt td{color:#fff;text-align:left;padding:12px 10px;border-bottom:1px solid #1e2026;background:none!important;white-space:nowrap}
