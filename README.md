@@ -226,7 +226,9 @@ stops using them while live mode is on.
 - A red **REAL MONEY** bar across the top, and every account, ticket and bot label says LIVE.
 - Every buy is checked before it's sent: what you hold + buys waiting to fill + this order must stay under `LIVE_MAX_USD`.
   If it wouldn't, the order is refused and never reaches Alpaca.
-- No short selling, no selling options to open, and orders can't be resized (only canceled and re-placed).
+- No short selling, no selling options to open (option spreads must be ones you pay for, where the most you can lose is the price),
+  and orders can't be resized (only canceled and re-placed). Raising the price of a buy that's waiting is checked against the limit again.
+- The stock and crypto swing bots size their trades from `LIVE_MAX_USD`, not from everything in the account.
 - The DCA bot uses half of `LIVE_MAX_USD` and fewer, bigger deals so each one is at least $25.
 - Selling what you already hold is always allowed, so stops, exits and **Emergency stop** keep working.
 
@@ -234,7 +236,9 @@ stops using them while live mode is on.
 your live Alpaca account; close it there if you want to. The app shows the paper account again.
 
 **Stop everything right now:** the **Bot** tab → **Emergency stop** (pauses the bots, cancels their orders and sells their positions), or set
-`BOT_PAUSED` to `true` in Vercel and redeploy (no new trades until you remove it).
+`BOT_PAUSED` to `true` in Vercel and redeploy (no new trades until you remove it). **Pause** stops new trades and also takes back the
+DCA bot's waiting dip buys; take profits, stops and exits keep working. If the app ever can't read whether you paused, it acts as if
+you did (no new trades) until it can.
 
 ---
 
@@ -246,16 +250,21 @@ your live Alpaca account; close it there if you want to. The app shows the paper
 - Your keys live only in Vercel's settings. The code in GitHub has no secrets in it; don't ever add any.
 - If Vercel offers a **Sensitive** checkbox when adding a secret, tick it (then even you can't read it back, which is fine).
 - On a shared computer, use Settings → Setup checklist → **Sign out** when done.
+- Lost a phone or think someone else signed in? Settings → Setup checklist → **Sign out everywhere** (tap it twice). Every other
+  device, a lost phone included, needs the passcode again; the one you pressed it on stays signed in.
 - Too many wrong passcodes lock sign-in for a while (it gets longer each time) and send you a notification if you set those up.
+  Phones and computers you signed in on before (in the last month or so) can still sign in during that lock.
+- Extra protection (optional, if your Vercel plan offers it): Vercel → your project → **Firewall** → a rate limit rule for `/api/session`
+  (for example 20 requests a minute per IP). It stops floods of guesses before they reach the app.
 
 ## If something goes wrong
 
 | What you see | What to do |
 |---|---|
 | Checklist says Alpaca keys don't work | Re-copy both paper keys into Vercel (no spaces), redeploy. Make sure they're from the **Paper** side. |
-| "Passcode not set" or can't sign in | Check `DASH_PASSCODE` in Vercel, redeploy, try again. Locked out? Wait 15 minutes. |
+| "Passcode not set" or can't sign in | Check `DASH_PASSCODE` in Vercel, redeploy, try again. Locked out? Wait 15 minutes, or sign in from a phone or computer you used before. |
 | Checklist says no scheduled run lately | Check cron-job.org → your job → History. 401 = the Authorization header doesn't match `CRON_SECRET`. |
-| Storage shows red | Step 6 again: the Blob store must be connected to the project, then redeploy. |
+| Storage shows red | Step 6 again: the Blob store must be connected to the project, then redeploy. Until it is, the bots manage open trades but make no new ones. |
 | A key or passcode may have leaked | Make a new one (Alpaca: Regenerate keys; others: make a new code), replace it in Vercel (and cron-job.org for `CRON_SECRET`), redeploy. The old one stops working. |
 | Something else | Settings → Setup checklist usually names it. Otherwise ask the person who shared this with you, and send a screenshot of the checklist (it never shows your keys). |
 

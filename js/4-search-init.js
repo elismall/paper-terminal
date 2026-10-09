@@ -110,7 +110,7 @@ async function checks() {
     row(h.locked, h.locked ? 'Passcode is set' : 'No passcode: market data is open to anyone with the link, the account stays locked', 'add DASH_PASSCODE in Vercel') +
     (h.locked && !h.passStrong ? row(false, '<span class="amber">Passcode is short: 12+ characters is much harder to guess</span>', 'change DASH_PASSCODE, then redeploy') : '') +
     row(h.cron, h.cron ? 'Scheduler secret set (CRON_SECRET)' : 'CRON_SECRET missing: the bot cannot run on a schedule and sign-in is off', 'add CRON_SECRET in Vercel') +
-    (h.locked ? row(h.authorized, h.authorized ? `This device is signed in${state.session?.exp ? ' until ' + when(state.session.exp) : ''} <button class="btn" id="signout" style="padding:1px 8px;margin-left:6px">Sign out</button>` : 'This device is not signed in yet', 'type the passcode above and Save') : '') +
+    (h.locked ? row(h.authorized, h.authorized ? `This device is signed in${state.session?.exp ? ' until ' + when(state.session.exp) : ''} <button class="btn" id="signout" style="padding:1px 8px;margin-left:6px">Sign out</button> <button class="btn" id="signout-all" style="padding:1px 8px" title="Signs out every phone and computer, including any you lost">Sign out everywhere</button>` : 'This device is not signed in yet', 'type the passcode above and Save') : '') +
     (h.authorized ? row(h.store, h.store ? 'Storage connected (Vercel Blob)' : 'Storage missing: the bot cannot remember anything', 'Vercel → Storage → create a Blob store and connect it') +
       row(age != null && age < 26, L?.at ? `Last scheduled bot run ${when(L.at)}${age >= 26 ? ' (over a day ago)' : ''}` : 'No scheduled bot run yet', h.botPaused ? 'the bot is paused (BOT_PAUSED)' : 'check cron-job.org (free plan) or Vercel → Settings → Cron Jobs (Pro)') +
       row(!T?.blocked, T?.live ? `<b class="down">LIVE: real money, up to $${T.cap} in the market</b>` : T?.blocked ? `<span class="amber">${esc(T.blocked)}</span>` : 'Trading: paper (practice money)', T?.blocked ? 'finish the live settings or remove TRADING_MODE' : '') : '') +
@@ -119,7 +119,12 @@ async function checks() {
     row(h.fred, 'FRED key (Macro tab)', 'free at fred.stlouisfed.org', 1) + row(h.sec, 'SEC contact (company financials)', 'set SEC_USER_AGENT to your name and email', 1) +
     row(true, `Crypto data (no key needed) · version ${esc(h.version || '')}${guide}`);
 }
-$('#checks').addEventListener('click', async e => { if (e.target.id !== 'signout') return; await apiSend('session', null, 'DELETE'); cfg.authed = false; cfg.gate = ''; state.session = null; await checks(); Object.keys(lastLoad).forEach(k => delete lastLoad[k]); loadFor(tab, true); });
+// v0.20.0: "Sign out everywhere" needs a second tap (like the kill switch), then signs out every other device (a lost phone too);
+// this one gets a fresh session and stays signed in.
+$('#checks').addEventListener('click', async e => { if (e.target.id !== 'signout' && e.target.id !== 'signout-all') return;
+  const b = e.target, all = b.id === 'signout-all', idle = 'Sign out everywhere';
+  if (all && b.dataset.arm !== '1') { b.dataset.arm = '1'; b.classList.add('arm'); b.textContent = 'Tap again: every other device needs the passcode again'; setTimeout(() => { b.dataset.arm = ''; b.classList.remove('arm'); b.textContent = idle; }, 5000); return; }
+  const r = await apiSend('session', null, 'DELETE', all ? { all: '1' } : {}); if (all && r.error) { b.textContent = r.message || 'Could not sign out everywhere. Try again.'; return; } cfg.authed = all && !!r.authorized; cfg.gate = cfg.authed ? r.gate || '' : ''; state.session = cfg.authed ? r : null; await checks(); Object.keys(lastLoad).forEach(k => delete lastLoad[k]); loadFor(tab, true); });
 $('#openSettings').onclick = openSettings; $('#closeSettings').onclick = () => $('#settings').hidden = true;
 $('#settings').addEventListener('click', e => { if (e.target.id === 'settings') $('#settings').hidden = true; });
 $('#saveSettings').onclick = async () => {
