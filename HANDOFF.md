@@ -152,7 +152,7 @@ as a GitHub issue labeled `audit`. Run it on every change to auth, orders, sizin
 with scope "full".
 
 ## Status as of 2026-10-09
-- v0.20.0 (PR #PRNUM, open, not merged) fixes audit issues #2-#8 and #10-#13 in one change: fail-closed kill switch and run lock,
+- v0.20.0 (PR #18, open, not merged) fixes audit issues #2-#8 and #10-#13 in one change: fail-closed kill switch and run lock,
   strict Blob reads for every read-modify-write, a duplicate-order check before every bot entry, DCA dip buys gated by pause,
   the tighter live cap, the lockout rework and sign out everywhere, quieter `/api/health`, timeouts, the evening catch-up and
   the 00:05 UTC backup cron, push host allowlist, storage cleanup. Also: schedule copy in the app and file headers now says
