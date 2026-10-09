@@ -96,3 +96,11 @@ test('a manual crypto run before 7 PM does not mark the evening run done; one af
   await saveLastRun({ slot: 'cx', level: 1 }, Date.parse('2026-10-08T23:05:00Z')); // 7:05 PM EDT
   assert.equal(JSON.parse(puts()[1].body).evening, '2026-10-08');
 });
+
+test('kill switch: a 404 at the guessed address never overwrites a mode.json the store lists', async () => {
+  const REAL = 'https://real-store.public.blob.vercel-storage.com/control/mode.json';
+  net = fakeFetch({ [`${STORE}/control/mode.json`]: status(404), [REAL]: { mode: 'pause', by: 'you' },
+    'vercel.com/api/blob?': { blobs: [{ pathname: 'control/mode.json', url: REAL }] }, 'vercel.com/api/blob': {} });
+  assert.equal((await getMode({ fresh: true })).mode, 'pause');
+  assert.equal(puts().length, 0, 'the pause is never overwritten with "run"');
+});

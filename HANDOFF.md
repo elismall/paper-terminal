@@ -133,7 +133,8 @@ What `npm run audit` covers:
   changes on buys re-capped; concurrent buys; filled bracket parents; OCO exits; unfinished buys (pending_cancel, done_for_day)
   counted.
 - `test/storage.test.js`: strict vs lenient Blob reads; no save after a failed read (scoreboard, push devices); push host
-  allowlist; kill switch and run lock fail closed; evening marker (a manual noon run does not count).
+  allowlist; kill switch and run lock fail closed (a 404 at a wrongly guessed store address never overwrites a listed
+  `mode.json`); evening marker (a manual noon run does not count).
 - `test/hardening.test.js`: parallel guesses, the owner's grace past the everyone-lock, what health tells strangers, cross-site
   `?run=1` GETs, the duplicate-order check, a timed-out exit sell stays "maybe sent", the evening catch-up, sign out
   everywhere (the pressing device stays signed in).
@@ -164,12 +165,13 @@ with scope "full".
   the tighter live cap, the lockout rework and sign out everywhere, quieter `/api/health`, timeouts, the evening catch-up and
   the 00:40 UTC backup cron, push host allowlist, storage cleanup. Also: schedule copy in the app and file headers now says
   "every tick (15 minutes on the free setup)" instead of "every 5 minutes", and the `docs/RESULTS-LOG.md` references are gone.
-  `npm run audit` passes (81 tests). The adversary auditor ran on the diff twice. First pass, 7 findings fixed with tests (live
+  `npm run audit` passes (82 tests). The adversary auditor ran on the diff twice. First pass, 7 findings fixed with tests (live
   cap race, filled parents double-counted, OCO exits refused, stranger-triggered Blob reads, cookie too short for the grace
   bypass, evening marker date and repeats, timed-out exit sells). Second pass, 6 fixed with tests (a sign-in could overwrite a
   saved sign-out cut-off with 0; a cold instance ignored the cut-off it read; the pressing device lost its grace; a refused
   retry after a timed-out exit sell looked "not sent"; a manual noon crypto run marked the evening done; unfinished buys such
-  as pending_cancel were left out of the live cap).
+  as pending_cancel were left out of the live cap). Also carries the kill-switch fix from closed PR #15: `migrateMode` no
+  longer writes "run" over a real pause when the guessed store address 404s but the list shows `control/mode.json`.
 - v0.19.0 (PR #17, merged 2026-10-09) adds a search box to the Crypto tab's Market list, and that list is now the whole market: `routes/crypto.js` `?all=1`
   returns every tradable Alpaca `/USD` pair (asset list via `pget`, cached 6 hours per instance; needs keys, else the 14 bot
   coins), with price, 24h/7d/30d change, 24h dollar volume and a 48h sparkline, sorted by volume; CDN cache 60 s. It downloads
