@@ -4,7 +4,7 @@ import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { setEnv, fakeFetch, status } from './helpers.js';
 import { blobGet, blobGetStrict, blobUpdate, listSubs, addSub, pushHostOk } from '../lib/notify.js';
-import { getMode, checkLock, ladder, eveningDone } from '../lib/control.js';
+import { getMode, checkLock, ladder, eveningDone, saveLastRun } from '../lib/control.js';
 import { saveDaily } from '../lib/history.js';
 
 const STORE = 'https://store1.public.blob.vercel-storage.com';
@@ -87,4 +87,12 @@ test('evening run marker: done, not done, or unknown', async () => {
   assert.equal(await eveningDone('2026-10-09'), false);
   net.restore(); net = fakeFetch({ [`${STORE}/control/last.json`]: status(500) });
   assert.equal(await eveningDone('2026-10-08'), null);
+});
+
+test('a manual crypto run before 7 PM does not mark the evening run done; one after 7 PM does', async () => {
+  net = fakeFetch({ [`${STORE}/control/last.json`]: { evening: '2026-10-07' }, 'vercel.com/api/blob': {} });
+  await saveLastRun({ slot: 'cx', level: 1 }, Date.parse('2026-10-08T16:00:00Z')); // noon EDT
+  assert.equal(JSON.parse(puts()[0].body).evening, '2026-10-07', 'noon run keeps yesterday\'s marker');
+  await saveLastRun({ slot: 'cx', level: 1 }, Date.parse('2026-10-08T23:05:00Z')); // 7:05 PM EDT
+  assert.equal(JSON.parse(puts()[1].body).evening, '2026-10-08');
 });

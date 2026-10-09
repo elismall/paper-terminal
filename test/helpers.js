@@ -16,7 +16,7 @@ export const status = (code, body = { error: 'x' }) => ({ [STATUS]: code, body }
 export function fakeFetch(routes = {}) {
   const calls = [], real = globalThis.fetch;
   globalThis.fetch = async (url, init = {}) => {
-    url = String(url); calls.push({ url, method: init.method || 'GET', body: init.body });
+    url = String(url); calls.push({ url, method: init.method || 'GET', body: init.body, headers: init.headers || {} });
     const k = Object.keys(routes).find(k => url.includes(k));
     if (!k) throw new Error(`unexpected network call: ${init.method || 'GET'} ${url}`);
     const v = typeof routes[k] === 'function' ? routes[k](url, init) : routes[k];

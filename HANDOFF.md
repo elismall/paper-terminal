@@ -49,8 +49,10 @@ No build step, no npm dependencies, Node 22 (`package.json` engines), ES modules
   `control/signout.json`; `sessionOf` rejects sessions issued before it. The router refreshes the cut-off only for requests that
   carry the session cookie, at most every 30 minutes per instance, through the CDN copy (each read costs from the Hobby read
   allowance; a stranger must never be able to spend it). Other instances can lag up to about an hour; changing `CRON_SECRET`
-  signs everyone out at once. The first sign-in creates the file (`ensureSignOutFile`), because a missing file is never
-  CDN-cached. If Blob is unreadable it keeps the last known value (fail-open on purpose, so a storage hiccup never locks the
+  signs everyone out at once. The device that pressed it gets a fresh session issued at the cut-off, so it stays signed in and
+  keeps its grace past the "everyone" lock. The first sign-in creates the file create-only (`ensureSignOutFile`, `blobCreate`),
+  because a missing file is never CDN-cached; it must never overwrite a cut-off another instance saved. A cold instance also
+  applies the cut-off it reads there. If Blob is unreadable it keeps the last known value (fail-open on purpose, so a storage hiccup never locks the
   owner out of the kill switch).
 - **CSRF**: `api/router.js` refuses cross-site POST/DELETE, and since v0.20.0 also cross-site GETs that carry `run` or `dry`
   (they place trades or run jobs). Cron callers send no Origin / Sec-Fetch-Site and pass.
@@ -88,7 +90,8 @@ No build step, no npm dependencies, Node 22 (`package.json` engines), ES modules
   working via `waitUntil`. Vercel Pro can call it every 5 minutes instead.
 - `vercel.json` backup crons: daily `/api/tick?every=60&lock=1` at 00:40 UTC (8:40 PM EDT / 7:40 PM EST, after a 7:30 tick has
   finished; `lock=1` takes the real run lock, one Blob write a day), daily `/api/hist` (crypto history), weekly `/api/dcalab`.
-- Evening run (7 PM ET, slot `cx`): `saveLastRun` records the New York day it finished in `control/last.json` (`evening`). After
+- Evening run (7 PM ET, slot `cx`): `saveLastRun` records the New York day in `control/last.json` (`evening`), only for a `cx` run started at
+  or after 7 PM (a manual crypto run at noon does not count). After
   7 PM the tick reads it (`eveningDone`): done → never twice; not done → only the backup tick catches it up (once per instance per
   day, so a failed save can't repeat it all evening); unreadable → only the usual 7 PM window. The marker is dated by the run's
   start, so a late run can't mark tomorrow as done.
@@ -127,11 +130,15 @@ What `npm run audit` covers:
   cookie flags; lockout.
 - `test/live-guard.test.js`: paper unless every live setting is exact; live cap, short-sale, sell-to-open and resize
   refusals; nothing sent when refused; credit spreads, calendars and sell brackets refused; resting market buys priced; price
-  changes on buys re-capped.
+  changes on buys re-capped; concurrent buys; filled bracket parents; OCO exits; unfinished buys (pending_cancel, done_for_day)
+  counted.
 - `test/storage.test.js`: strict vs lenient Blob reads; no save after a failed read (scoreboard, push devices); push host
-  allowlist; kill switch and run lock fail closed; evening marker.
+  allowlist; kill switch and run lock fail closed; evening marker (a manual noon run does not count).
 - `test/hardening.test.js`: parallel guesses, the owner's grace past the everyone-lock, what health tells strangers, cross-site
-  `?run=1` GETs, the duplicate-order check, the evening catch-up, sign out everywhere.
+  `?run=1` GETs, the duplicate-order check, a timed-out exit sell stays "maybe sent", the evening catch-up, sign out
+  everywhere (the pressing device stays signed in).
+- `test/signout.test.js`: sign out everywhere across instances (a sign-in never overwrites a saved cut-off; a cold instance
+  applies it at once).
 - `test/repo.test.js` (drift check): routes wired; every handler has an auth check and POST/DELETE are strict; CSP and headers;
   `index.html` scripts match `js/`; no eval or committed keys; `.env.example` matches the code both ways; the version here
   matches `lib/version.js`; `.vercelignore` covers repo-only files; every file parses.
@@ -155,9 +162,14 @@ with scope "full".
 - v0.20.0 (PR #18, open, not merged) fixes audit issues #2-#8 and #10-#13 in one change: fail-closed kill switch and run lock,
   strict Blob reads for every read-modify-write, a duplicate-order check before every bot entry, DCA dip buys gated by pause,
   the tighter live cap, the lockout rework and sign out everywhere, quieter `/api/health`, timeouts, the evening catch-up and
-  the 00:05 UTC backup cron, push host allowlist, storage cleanup. Also: schedule copy in the app and file headers now says
+  the 00:40 UTC backup cron, push host allowlist, storage cleanup. Also: schedule copy in the app and file headers now says
   "every tick (15 minutes on the free setup)" instead of "every 5 minutes", and the `docs/RESULTS-LOG.md` references are gone.
-  `npm run audit` passes (76 tests). The adversary auditor ran on the diff; its 7 findings were fixed with tests (live cap race, filled parents double-counted, OCO exits refused, stranger-triggered Blob reads, cookie too short for the grace bypass, evening marker date and repeats, timed-out exit sells).
+  `npm run audit` passes (81 tests). The adversary auditor ran on the diff twice. First pass, 7 findings fixed with tests (live
+  cap race, filled parents double-counted, OCO exits refused, stranger-triggered Blob reads, cookie too short for the grace
+  bypass, evening marker date and repeats, timed-out exit sells). Second pass, 6 fixed with tests (a sign-in could overwrite a
+  saved sign-out cut-off with 0; a cold instance ignored the cut-off it read; the pressing device lost its grace; a refused
+  retry after a timed-out exit sell looked "not sent"; a manual noon crypto run marked the evening done; unfinished buys such
+  as pending_cancel were left out of the live cap).
 - v0.19.0 (PR #17, merged 2026-10-09) adds a search box to the Crypto tab's Market list, and that list is now the whole market: `routes/crypto.js` `?all=1`
   returns every tradable Alpaca `/USD` pair (asset list via `pget`, cached 6 hours per instance; needs keys, else the 14 bot
   coins), with price, 24h/7d/30d change, 24h dollar volume and a 48h sparkline, sorted by volume; CDN cache 60 s. It downloads
@@ -205,7 +217,10 @@ with scope "full".
   runs within the same second can both pass for one symbol (deterministic ids would close it; stock/crypto ids carry prices);
   lockout counting is per warm instance, so a burst spread over N instances gets about N times the guesses until the Blob copy
   catches up; unknown what status an over-quota or suspended Blob store returns (if 404, the kill switch would read as never
-  set); a fork without Blob now makes no new trades (fail-closed, README says so).
+  set); a fork without Blob now makes no new trades (fail-closed, README says so); live orders now queue one at a time per instance,
+  so a slow Alpaca could stretch a run toward the 300 s limit (every call has a deadline); a non-evening run that hits a failed
+  read of `control/last.json` drops the `evening` marker, so the backup may run the evening job a second time (one extra hold
+  review); the duplicate `client_order_id` answer from Alpaca is assumed to be 422 (if not, `ppostSure` still reports a timeout).
 
 ### Audit findings (first pass, 2026-10-02; GitHub issues labeled `audit`)
 

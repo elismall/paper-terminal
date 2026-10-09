@@ -250,8 +250,8 @@ you did (no new trades) until it can.
 - Your keys live only in Vercel's settings. The code in GitHub has no secrets in it; don't ever add any.
 - If Vercel offers a **Sensitive** checkbox when adding a secret, tick it (then even you can't read it back, which is fine).
 - On a shared computer, use Settings → Setup checklist → **Sign out** when done.
-- Lost a phone or think someone else signed in? Settings → Setup checklist → **Sign out everywhere** (tap it twice). Every device,
-  this one too, needs the passcode again.
+- Lost a phone or think someone else signed in? Settings → Setup checklist → **Sign out everywhere** (tap it twice). Every other
+  device, a lost phone included, needs the passcode again; the one you pressed it on stays signed in.
 - Too many wrong passcodes lock sign-in for a while (it gets longer each time) and send you a notification if you set those up.
   Phones and computers you signed in on before (in the last month or so) can still sign in during that lock.
 - Extra protection (optional, if your Vercel plan offers it): Vercel → your project → **Firewall** → a rate limit rule for `/api/session`

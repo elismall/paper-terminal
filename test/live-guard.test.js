@@ -138,3 +138,11 @@ test('live: the bot\'s protective OCO sell on a held position is sent', async ()
   await ppost('/v2/orders', { symbol: 'SPY', side: 'sell', type: 'limit', qty: '0.5', time_in_force: 'gtc', order_class: 'oco', take_profit: { limit_price: '60' }, stop_loss: { stop_price: '45' } });
   assert.equal(posted().length, 1);
 });
+
+test('live: a resting buy that is still being canceled (or held for the next day) counts toward the cap', async () => {
+  for (const st of ['pending_cancel', 'done_for_day', 'suspended']) {
+    setEnv(LIVE_ENV); net?.restore(); net = liveAccount({ 'api.alpaca.markets/v2/orders?status=open': [{ side: 'buy', qty: '1', limit_price: '50', symbol: 'ETHUSD', status: st }] });
+    await assert.rejects(ppost('/v2/orders', { symbol: 'AAPL', qty: 1, side: 'buy', type: 'limit', limit_price: 20 }), /LIVE_MAX_USD/, st);
+    assert.equal(posted().length, 0, st);
+  }
+});

@@ -1,6 +1,6 @@
 // Sign in / out (v0.17.0). POST {passcode} -> session cookie + today's market-data key; GET -> is this device signed in (and
 // the key again, so a page open past midnight can refresh it); DELETE -> sign this device out; DELETE ?all=1 (v0.20.0, signed-in
-// devices only) -> sign out every device, including a stolen cookie. Every answer is private, no-store.
+// devices only) -> sign out every other device, including a stolen cookie; this one gets a fresh session. Every answer is private, no-store.
 import { json, env, safeEq, sessionOf, sessionToken, sessionCookie, gateFor, SESSION, authorized } from '../lib/core.js';
 import { lockState, recordFail, recordOk, signOutEverywhere, ensureSignOutFile, GUARD } from '../lib/authguard.js';
 
@@ -35,8 +35,12 @@ export async function POST(req) {
 export async function DELETE(req) {
   if (new URL(req.url).searchParams.get('all') === '1') {
     if (!authorized(req, { strict: true })) return json({ error: 'locked', message: 'Sign in on this device first.' }, { status: 401, priv: true });
-    try { await signOutEverywhere(); } catch (e) { return json({ error: 'upstream', message: 'Could not save the sign-out (storage did not answer). Nothing changed; try again.' }, { status: 502, priv: true }); }
-    return withCookie(json({ ok: true, authorized: false, everywhere: true }, { priv: true }), sessionCookie('', 0));
+    const now = Date.now();
+    try { await signOutEverywhere(now); } catch (e) { return json({ error: 'upstream', message: 'Could not save the sign-out (storage did not answer). Nothing changed; try again.' }, { status: 502, priv: true }); }
+    // This device gets a fresh session issued at the cut-off, so the owner stays signed in (and keeps the "everyone"-lock grace)
+    // while every other cookie, a stolen one included, stops working.
+    const t = sessionToken(now);
+    return withCookie(json({ ...view({ exp: t.exp }), everywhere: true }, { priv: true }), sessionCookie(t.value, (SESSION.days + GUARD.graceDays) * 86400));
   }
   return withCookie(json({ ok: true, authorized: false }, { priv: true }), sessionCookie('', 0));
 }

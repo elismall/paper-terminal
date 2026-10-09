@@ -119,11 +119,12 @@ async function checks() {
     row(h.fred, 'FRED key (Macro tab)', 'free at fred.stlouisfed.org', 1) + row(h.sec, 'SEC contact (company financials)', 'set SEC_USER_AGENT to your name and email', 1) +
     row(true, `Crypto data (no key needed) · version ${esc(h.version || '')}${guide}`);
 }
-// v0.20.0: "Sign out everywhere" needs a second tap (like the kill switch), then signs out every device (a lost phone too).
+// v0.20.0: "Sign out everywhere" needs a second tap (like the kill switch), then signs out every other device (a lost phone too);
+// this one gets a fresh session and stays signed in.
 $('#checks').addEventListener('click', async e => { if (e.target.id !== 'signout' && e.target.id !== 'signout-all') return;
   const b = e.target, all = b.id === 'signout-all', idle = 'Sign out everywhere';
-  if (all && b.dataset.arm !== '1') { b.dataset.arm = '1'; b.classList.add('arm'); b.textContent = 'Tap again: every device needs the passcode again'; setTimeout(() => { b.dataset.arm = ''; b.classList.remove('arm'); b.textContent = idle; }, 5000); return; }
-  const r = await apiSend('session', null, 'DELETE', all ? { all: '1' } : {}); if (all && r.error) { b.textContent = r.message || 'Could not sign out everywhere. Try again.'; return; } cfg.authed = false; cfg.gate = ''; state.session = null; await checks(); Object.keys(lastLoad).forEach(k => delete lastLoad[k]); loadFor(tab, true); });
+  if (all && b.dataset.arm !== '1') { b.dataset.arm = '1'; b.classList.add('arm'); b.textContent = 'Tap again: every other device needs the passcode again'; setTimeout(() => { b.dataset.arm = ''; b.classList.remove('arm'); b.textContent = idle; }, 5000); return; }
+  const r = await apiSend('session', null, 'DELETE', all ? { all: '1' } : {}); if (all && r.error) { b.textContent = r.message || 'Could not sign out everywhere. Try again.'; return; } cfg.authed = all && !!r.authorized; cfg.gate = cfg.authed ? r.gate || '' : ''; state.session = cfg.authed ? r : null; await checks(); Object.keys(lastLoad).forEach(k => delete lastLoad[k]); loadFor(tab, true); });
 $('#openSettings').onclick = openSettings; $('#closeSettings').onclick = () => $('#settings').hidden = true;
 $('#settings').addEventListener('click', e => { if (e.target.id === 'settings') $('#settings').hidden = true; });
 $('#saveSettings').onclick = async () => {

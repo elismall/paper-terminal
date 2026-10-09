@@ -3,10 +3,10 @@
 // the evening run catch-up (#8). Sign-out-everywhere changes this process's state, so it runs last and lives in its own file.
 import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { signedOut, fakeFetch, req, PASS, setEnv, CRON } from './helpers.js';
+import { signedOut, fakeFetch, req, PASS, setEnv, CRON, status } from './helpers.js';
 import { authorized, sessionToken, SESSION } from '../lib/core.js';
 import { _resetGuard, GUARD } from '../lib/authguard.js';
-import { recentlyOrdered } from '../lib/trade.js';
+import { recentlyOrdered, ppostSure, timedOut } from '../lib/trade.js';
 import { planTick } from '../lib/schedule.js';
 import * as router from '../api/router.js';
 import * as session from '../routes/session.js';
@@ -91,14 +91,25 @@ test('evening marker is dated by when the run started', async () => {
   assert.equal(JSON.parse(net.calls.find(c => c.method === 'PUT').body).evening, '2026-10-08');
 });
 
+test('an exit sell that timed out still reports the timeout when the retry is refused (no close-all fallback)', async () => {
+  let n = 0;
+  net.restore(); net = fakeFetch({ 'paper-api.alpaca.markets/v2/orders': () => { if (n++ === 0) { const e = new Error('timed out'); e.name = 'TimeoutError'; throw e; } return status(403, { message: 'insufficient qty available for order' }); } });
+  const err = await ppostSure('/v2/orders', { symbol: 'AAPL', qty: 1, side: 'sell', type: 'market', client_order_id: 'tbbot-x-exit' }).catch(e => e);
+  assert.equal(timedOut(err), true, 'the caller must treat it as maybe sent');
+  assert.equal(n, 2);
+});
+
 test('sign out everywhere: every earlier session stops working, new ones work', async () => {
   setEnv({ DASH_PASSCODE: PASS, CRON_SECRET: CRON, BLOB_READ_WRITE_TOKEN: 'vercel_blob_rw_STORE2_testsecret' });
   net.restore(); net = fakeFetch({ 'vercel.com/api/blob': {} });
   const old = sessionToken(Date.now() - 5000), other = sessionToken(Date.now() - 2000);
   assert.equal((await session.DELETE(req('/api/session?all=1', { method: 'DELETE' }))).status, 401, 'needs a signed-in device');
   const r = await session.DELETE(req('/api/session?all=1', { method: 'DELETE', headers: cookieOf(old) }));
-  assert.equal(r.status, 200); assert.match(r.headers.get('set-cookie'), /Max-Age=0/);
+  assert.equal(r.status, 200);
   assert.equal(net.calls.filter(c => c.method === 'PUT').length, 1, 'the cut-off is saved');
   for (const t of [old, other]) assert.equal(authorized(req('/', { headers: cookieOf(t) }), { strict: true }), false);
+  const mine = /=([^;]+)/.exec(r.headers.get('set-cookie'))[1];
+  assert.equal(authorized(req('/', { headers: cookieOf({ value: mine }) }), { strict: true }), true, 'the device that pressed it stays signed in (and keeps its everyone-lock grace)');
+  assert.equal((await r.json()).authorized, true);
   assert.equal(authorized(req('/', { headers: cookieOf(sessionToken()) }), { strict: true }), true);
 });
