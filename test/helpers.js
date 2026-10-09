@@ -9,7 +9,10 @@ export function setEnv(vars = {}) { for (const k of KEYS) delete process.env[k];
 export const signedOut = () => setEnv({ DASH_PASSCODE: PASS, CRON_SECRET: CRON, ALPACA_KEY_ID: 'PKTEST', ALPACA_SECRET_KEY: 'sk-test' });
 
 // fetch stand-in: records every call and answers from `routes` ({ 'substring of url': body | (url, init) => body }).
-// Anything unmatched throws, so a test fails loudly if code reaches a service it should not.
+// Anything unmatched throws, so a test fails loudly if code reaches a service it should not. A function that throws is a network
+// error; status(code, body) answers with that HTTP status (v0.20.0: Blob outages and missing files).
+const STATUS = Symbol('status');
+export const status = (code, body = { error: 'x' }) => ({ [STATUS]: code, body });
 export function fakeFetch(routes = {}) {
   const calls = [], real = globalThis.fetch;
   globalThis.fetch = async (url, init = {}) => {
@@ -17,7 +20,8 @@ export function fakeFetch(routes = {}) {
     const k = Object.keys(routes).find(k => url.includes(k));
     if (!k) throw new Error(`unexpected network call: ${init.method || 'GET'} ${url}`);
     const v = typeof routes[k] === 'function' ? routes[k](url, init) : routes[k];
-    return new Response(JSON.stringify(v), { status: 200, headers: { 'content-type': 'application/json' } });
+    const st = v?.[STATUS] || 200, body = v?.[STATUS] ? v.body : v;
+    return new Response(JSON.stringify(body ?? null), { status: st, headers: { 'content-type': 'application/json' } });
   };
   return { calls, restore: () => { globalThis.fetch = real; } };
 }

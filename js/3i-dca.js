@@ -27,7 +27,7 @@ function dcaCtl(v) {
   return `<div class="botrow btctl"><button class="btn ${BT.arm === 'd' ? 'arm' : 'primary'}" data-botrun="d" ${BT.busy ? 'disabled' : ''}>${armed('d', 'run DCA') || 'Run DCA now'}</button>
     <button class="btn ${BT.arm === 'c' ? 'arm' : ''}" data-botrun="c" ${BT.busy ? 'disabled' : ''}>${armed('c', 'run crypto check') || 'Run crypto check now'}</button>
     <button class="btn" data-botrun="dry" ${BT.busy ? 'disabled' : ''}>Preview (no orders)</button>
-    <span class="muted" style="font-size:12px">Crypto deals are checked every 5 minutes; ETF deals every 15 minutes while the market is open.</span></div>${busy}${v?.error ? msg(v) : ''}`;
+    <span class="muted" style="font-size:12px">Crypto deals are checked on every scheduled tick (every 15 minutes on the free setup); ETF deals on the same ticks while the market is open.</span></div>${busy}${v?.error ? msg(v) : ''}`;
 }
 // Every order the DCA bot has resting (or will place at the next check), nearest to the price first.
 function dcaRestView(v) {
@@ -43,7 +43,7 @@ function dcaRestView(v) {
   rows.forEach(r => { r.away = (r.px / r.now - 1) * 100; }); rows.sort((a, z) => Math.abs(a.away) - Math.abs(z.away));
   const st = (r) => r.live === true ? '<span class="st rest">RESTING</span>' : r.live === false ? '<span class="st wait">NEXT</span>' : '<span class="st wait">WATCH</span>';
   return `<div class="scroll dtrest"><table><thead><tr><th class="l">Coin</th><th class="l">Order</th><th>Price · away</th><th class="amt">Amount</th><th>Status</th></tr></thead><tbody>${rows.map(r => `<tr data-sym="${esc(r.s)}"><td class="l sy">${esc(r.s.replace('/USD', ''))}</td><td class="l ${r.exit ? 'down' : r.sell ? 'up' : ''}">${esc(r.what)}</td><td>${fp(r.px)}<small class="${cls(r.away)}">${sgn(r.away, 2, '%')}</small></td><td class="amt">${r.usd != null ? f$(r.usd) : '—'}</td><td>${st(r)}</td></tr>`).join('')}</tbody></table></div>
-    <div class="muted" style="font-size:11.5px;padding:4px 10px 8px">RESTING = the order is at Alpaca now. NEXT = placed at the next check (every 5 minutes). WATCH = the bot acts itself when price gets there: the trailing take profit starts, or the hard exit sells at market.</div>`;
+    <div class="muted" style="font-size:11.5px;padding:4px 10px 8px">RESTING = the order is at Alpaca now. NEXT = placed at the next scheduled check. WATCH = the bot acts itself when price gets there: the trailing take profit starts, or the hard exit sells at market.</div>`;
 }
 function dcaFeedView(v) {
   if (!v || v.error) return v?.error ? '' : `<li>${loading}</li>`;

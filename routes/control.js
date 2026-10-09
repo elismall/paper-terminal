@@ -12,7 +12,7 @@ const locked = () => json({ error: 'locked', message: 'Enter your passcode in Se
 export async function GET(req) {
   if (!authorized(req, { strict: true })) return locked();
   try {
-    const [mode, last, gap, review] = await Promise.all([getMode(), lastRun(), gapToday(), lastReview()]);
+    const [mode, last, gap, review] = await Promise.all([getMode().catch(e => ({ mode: 'unknown', error: e.message })), lastRun(), gapToday(), lastReview()]);
     return json({ ...mode, last, gap, review: review ? { at: review.at, mode: review.mode, n: Object.keys(review.items || {}).length } : null, jev: { ...jevStatus(), gate: JEV.gate }, risk: RISK, at: new Date().toISOString() }, { priv: true });
   } catch (e) { return fail(e, 'control'); }
 }
