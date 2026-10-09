@@ -5,7 +5,7 @@ the code, the rules that keep it safe, and what is open. **Keep it current:** an
 paths or the version updates this file in the same commit. The `steward` skill (`.claude/skills/steward/SKILL.md`) says how,
 and `npm run audit` fails if the version below is stale.
 
-**Current version:** 0.18.1 (`lib/version.js`; bump it with every deploy). Owner: Eli (`elismall`).
+**Current version:** 0.19.0 (`lib/version.js`; bump it with every deploy). Owner: Eli (`elismall`).
 Repo: https://github.com/elismall/paper-terminal
 
 ## What it is
@@ -88,6 +88,8 @@ What `npm run audit` covers:
   `index.html` scripts match `js/`; no eval or committed keys; `.env.example` matches the code both ways; the version here
   matches `lib/version.js`; `.vercelignore` covers repo-only files; every file parses.
   Also: README names every setting in `.env.example`, and no export in `lib/` or `routes/` goes unused.
+- `test/cryptomarket.test.js`: the Crypto tab's whole-market list (`/api/crypto?all=1`) with Alpaca faked: every tradable USD
+  coin once with its name, bar pages followed to the end, no plays, reads only; without keys, the bot's coins and no trading-API call.
 - `test/devserver.test.js`: the dev server refuses dotfiles, repo-only files, traversal and bad escapes, and keeps running.
 
 ## Outside hosts the server calls
@@ -102,6 +104,16 @@ as a GitHub issue labeled `audit`. Run it on every change to auth, orders, sizin
 with scope "full".
 
 ## Status as of 2026-10-08
+- v0.19.0 adds a search box to the Crypto tab's Market list, and that list is now the whole market: `routes/crypto.js` `?all=1`
+  returns every tradable Alpaca `/USD` pair (asset list via `pget`, cached 6 hours per instance; needs keys, else the 14 bot
+  coins), with price, 24h/7d/30d change, 24h dollar volume and a 48h sparkline, sorted by volume; CDN cache 60 s. It downloads
+  bars for all coins in one paged request per timeframe (`allBars`, paced, max 60 pages or 20 s) instead of one per coin. Each
+  instance builds it at most once a minute and shares that with every caller; any query besides `all=1` gets 400 (no
+  cache-busting); a failed asset-list read is retried after 5 minutes. A download cut short blanks the coins whose newest bars
+  are missing and sets `partial`, so stale numbers never show as current. Swing plays and the 30-second
+  board stay on `CRYPTO_UNIVERSE`, so the bot's coins, signals and trading are unchanged. Client: `js/3-trade-bot-crypto.js`
+  (`cbBoard`, `cbRow`, `cbLoadAll`, the `#cb-q` box; Enter opens the first match). Any coin can be charted and traded by hand
+  from the list, as the order ticket already allowed.
 - v0.18.0 (PR #16, merged 2026-10-08) added "Plays from the chart" on the Options tab: `lib/patterns.js` (5 chart patterns plus
   how often each worked before on that stock), a straddle/strangle builder in `lib/options.js`, `routes/options.js`
   `strategy=chart` (5-minute per-instance cache) and the `js/3l-chart.js` panel. Ideas only, no order buttons, no bot changes;
@@ -119,6 +131,11 @@ with scope "full".
 - Not verifiable there: market data and bots, because that sandbox has no Alpaca keys and blocks the hosts above.
 
 ## Known drift and open items
+- v0.19.0 whole-market list: not yet checked against live Alpaca (the cloud sandbox blocks it). Check how many pages the
+  multi-coin bar download takes (if it is ~40 per timeframe, the list uses a big share of the 200-a-minute data budget the bots
+  share while the Crypto tab is open), whether one tradable coin with no data makes Alpaca reject the whole multi-coin request,
+  and the asset name format (" / US Dollar" is stripped). With no `DASH_PASSCODE`, market data is open to anyone, so anyone
+  can trigger that download once a minute per instance (the 14-coin board already allowed a smaller version of this).
 - Header comments in `lib/schedule.js` and `routes/tick.js` still describe a Vercel Pro `*/5` cron; `vercel.json` now ships daily
   backups only and the README uses cron-job.org every 15 minutes.
 - `lib/history.js` and `lib/season.js` mention `docs/RESULTS-LOG.md`, which is not in the repo.
