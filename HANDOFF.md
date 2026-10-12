@@ -5,7 +5,7 @@ the code, the rules that keep it safe, and what is open. **Keep it current:** an
 paths or the version updates this file in the same commit. The `steward` skill (`.claude/skills/steward/SKILL.md`) says how,
 and `npm run audit` fails if the version below is stale.
 
-**Current version:** 0.19.0 (`lib/version.js`; bump it with every deploy). Owner: Eli (`elismall`).
+**Current version:** 0.19.1 (`lib/version.js`; bump it with every deploy). Owner: Eli (`elismall`).
 Repo: https://github.com/elismall/paper-terminal
 
 ## What it is
@@ -89,7 +89,11 @@ What `npm run audit` covers:
   matches `lib/version.js`; `.vercelignore` covers repo-only files; every file parses.
   Also: README names every setting in `.env.example`, and no export in `lib/` or `routes/` goes unused.
 - `test/cryptomarket.test.js`: the Crypto tab's whole-market list (`/api/crypto?all=1`) with Alpaca faked: every tradable USD
-  coin once with its name, bar pages followed to the end, no plays, reads only; without keys, the bot's coins and no trading-API call.
+  coin once with its name, bar pages followed to the end, no plays, reads only; without keys, the bot's coins and no trading-API call;
+  also through the router the way `vercel.json` rewrites it (`/api/router?__p=crypto&all=1`).
+- `test/patterns.test.js`: chart patterns (`lib/patterns.js`) on made-up candles fire on their setup and not on a normal day.
+- `test/chartplay.test.js`: the Options tab's chart mode (`routes/options.js` `strategy=chart`) end to end with Alpaca faked:
+  names the pattern, builds a defined-risk play, never calls an order endpoint.
 - `test/devserver.test.js`: the dev server refuses dotfiles, repo-only files, traversal and bad escapes, and keeps running.
 
 ## Outside hosts the server calls
@@ -103,7 +107,10 @@ on <area or diff>". It reads only, reports verified findings with severity, a fi
 as a GitHub issue labeled `audit`. Run it on every change to auth, orders, sizing, the kill switch, cron or storage, and weekly
 with scope "full".
 
-## Status as of 2026-10-08
+## Status as of 2026-10-12
+- v0.19.1 (weekly audit): the whole-market list refused every request that came through the `vercel.json` rewrite, because
+  its anti-cache-busting check rejected the rewrite's own `__p` key (`/api/router?__p=crypto&all=1` was 400, so the Crypto tab
+  fell back to the 14 bot coins). It now allows `__p`; a test drives it through `api/router.js`. Not yet confirmed on a deploy.
 - v0.19.0 adds a search box to the Crypto tab's Market list, and that list is now the whole market: `routes/crypto.js` `?all=1`
   returns every tradable Alpaca `/USD` pair (asset list via `pget`, cached 6 hours per instance; needs keys, else the 14 bot
   coins), with price, 24h/7d/30d change, 24h dollar volume and a 48h sparkline, sorted by volume; CDN cache 60 s. It downloads
