@@ -1,0 +1,554 @@
+<title>Tradebot Blueprint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f3f5f7; --panel:#ffffff; --panel-2:#f8f9fb; --ink:#121821; --ink-2:#465061; --muted:#727c8b; --line:#dde2e8; --line-2:#c9d0d9;
+  --accent:#0e6e66; --accent-ink:#ffffff; --accent-soft:#dcefec;
+  --good:#1d8049; --good-soft:#dff2e6; --warn:#a86f00; --warn-soft:#fbefd4; --crit:#c23636; --crit-soft:#fbe3e2; --info:#3c5a99; --info-soft:#e3e9f6;
+  --s1:#2a78d6; --s2:#eb6834; --grid:#e8ebef;
+  --display:"Archivo","Arial Narrow",system-ui,sans-serif; --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){color-scheme:dark;
+  --bg:#0e1217; --panel:#161b22; --panel-2:#1b2129; --ink:#eef1f4; --ink-2:#b4bcc7; --muted:#838c99; --line:#28303a; --line-2:#36404c;
+  --accent:#4cbfb2; --accent-ink:#06201d; --accent-soft:#15302d;
+  --good:#46c07a; --good-soft:#132b1e; --warn:#e2a93a; --warn-soft:#2e2412; --crit:#ef6d6b; --crit-soft:#321a1a; --info:#8aa6e6; --info-soft:#1a2236;
+  --s1:#3987e5; --s2:#d95926; --grid:#222a33;}}
+:root[data-theme="dark"]{color-scheme:dark;
+  --bg:#0e1217; --panel:#161b22; --panel-2:#1b2129; --ink:#eef1f4; --ink-2:#b4bcc7; --muted:#838c99; --line:#28303a; --line-2:#36404c;
+  --accent:#4cbfb2; --accent-ink:#06201d; --accent-soft:#15302d;
+  --good:#46c07a; --good-soft:#132b1e; --warn:#e2a93a; --warn-soft:#2e2412; --crit:#ef6d6b; --crit-soft:#321a1a; --info:#8aa6e6; --info-soft:#1a2236;
+  --s1:#3987e5; --s2:#d95926; --grid:#222a33;}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--body);}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:0 64px}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.topin{max-width:1180px;margin:0 auto;padding-inline:20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding-block:12px}
+.brand{font-family:var(--display);font-weight:800;font-stretch:80%;font-size:22px;letter-spacing:.01em;display:flex;align-items:baseline;gap:10px}
+.brand small{font:500 12px var(--mono);color:var(--muted);letter-spacing:0}
+nav.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}
+nav.tabs button{font:500 14px var(--body);color:var(--ink-2);background:none;border:1px solid transparent;border-radius:8px;padding:6px 12px;cursor:pointer}
+nav.tabs button:hover{background:var(--panel)}
+nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);font-stretch:85%;text-wrap:balance;margin:0}
+h1{font-size:clamp(30px,5vw,46px);font-weight:800;line-height:1.05;letter-spacing:-.01em}
+h2{font-size:24px;font-weight:700}
+h3{font-size:17px;font-weight:700;font-stretch:90%}
+p{margin:0}
+.lede{color:var(--ink-2);max-width:68ch;font-size:16px}
+.eyebrow{font:500 11.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+section.view{display:grid;gap:24px;padding-top:28px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.pill{display:inline-flex;align-items:center;gap:6px;font:500 12px var(--mono);padding:2px 9px;border-radius:999px;white-space:nowrap;border:1px solid transparent}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.p-done{color:var(--good);background:var(--good-soft)}
+.p-cfg{color:var(--warn);background:var(--warn-soft)}
+.p-prop{color:var(--info);background:var(--info-soft)}
+.p-crit{color:var(--crit);background:var(--crit-soft)}
+.v-use{color:var(--good);background:var(--good-soft)}
+.v-alt{color:var(--info);background:var(--info-soft)}
+.v-study{color:var(--warn);background:var(--warn-soft)}
+.v-skip{color:var(--muted);background:var(--panel-2);border-color:var(--line)}
+.mono{font-family:var(--mono)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+ul.clean{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+.kv{display:grid;grid-template-columns:120px 1fr;gap:6px 14px;font-size:14px}
+.kv dt{color:var(--muted);font:500 12px var(--mono);text-transform:uppercase;letter-spacing:.05em;padding-top:2px}
+.kv dd{margin:0}
+code,.code{font:13px/1.5 var(--mono);background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+pre.code{padding:12px 14px;overflow-x:auto;margin:0;white-space:pre}
+.banner{display:flex;gap:12px;align-items:flex-start;border:1px dashed var(--warn);background:var(--warn-soft);color:var(--ink);border-radius:10px;padding:10px 14px;font-size:14px}
+.banner b{color:var(--warn)}
+/* overview */
+.hero{display:grid;gap:14px;padding-top:8px}
+.stack{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.stackitem{border-top:3px solid var(--ink);padding-top:10px;display:grid;gap:4px}
+.stackitem .role{font:500 11.5px var(--mono);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.stackitem .pick{font-family:var(--display);font-weight:700;font-stretch:85%;font-size:20px}
+.decision{border-left:3px solid var(--accent);padding:4px 0 4px 14px}
+/* repos */
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{font:500 13px var(--body);border:1px solid var(--line-2);background:var(--panel);color:var(--ink-2);border-radius:999px;padding:5px 12px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:14px}
+th{font:500 11.5px var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+th button{all:unset;cursor:pointer}
+th button:hover{color:var(--ink)}
+td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr.row{cursor:pointer}
+tr.row:hover td{background:var(--panel-2)}
+tr.detail td{background:var(--panel-2);padding:14px 16px 18px}
+.bar{height:6px;border-radius:3px;background:var(--grid);width:110px;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--s1);border-radius:3px}
+.rname{font-weight:600}
+.rname a{color:inherit;text-decoration:none;border-bottom:1px solid var(--line-2)}
+.rname a:hover{border-color:var(--ink)}
+/* pipeline */
+.flow{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;counter-reset:st}
+.stage{position:relative;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 12px 12px;cursor:pointer;font:inherit;color:inherit;display:grid;gap:4px;min-height:98px}
+.stage:hover{border-color:var(--line-2)}
+.stage[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.stage .n{font:500 11px var(--mono);color:var(--muted)}
+.stage .t{font-family:var(--display);font-weight:700;font-stretch:85%;font-size:17px;line-height:1.15}
+.stage .tl{font-size:12.5px;color:var(--ink-2)}
+.stage .lane{position:absolute;top:10px;right:10px;font:500 10px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.lanes{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--ink-2)}
+.lanes span b{font-family:var(--mono);font-weight:500;color:var(--ink)}
+.detailcard{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:24px}
+@media (max-width:760px){.detailcard{grid-template-columns:1fr}}
+.toolrow{display:flex;flex-wrap:wrap;gap:6px}
+.tool{font:500 13px var(--mono);background:var(--accent-soft);color:var(--ink);border-radius:6px;padding:3px 8px}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:9px;overflow:hidden}
+.seg button{font:500 13px var(--body);border:0;background:var(--panel);color:var(--ink-2);padding:7px 14px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line-2)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+/* monitor */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;gap:2px}
+.kpi .l{font:500 11.5px var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.kpi .v{font:500 24px var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.kpi .d{font:500 12.5px var(--mono)}
+.up{color:var(--good)} .down{color:var(--crit)}
+.chartbox{position:relative}
+.chartbox svg{display:block;width:100%;height:auto;overflow:visible}
+.chartbox text{fill:var(--muted);font:11px var(--mono)}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font:12px/1.5 var(--mono);padding:7px 10px;border-radius:8px;white-space:nowrap;transform:translate(-50%,-110%);z-index:3}
+.tip .sw{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--ink-2)}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.chead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.gates{display:grid;gap:8px}
+.gate{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.gate:last-child{border-bottom:0}
+.gate .meter{height:5px;border-radius:3px;background:var(--grid);margin-top:6px;overflow:hidden}
+.gate .meter i{display:block;height:100%}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel-2)}
+.toggle{position:relative;width:46px;height:26px;border-radius:13px;border:0;background:var(--line-2);cursor:pointer;flex:none}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--panel);transition:left .15s}
+.toggle[aria-checked="true"]{background:var(--crit)}
+.toggle[aria-checked="true"]::after{left:23px}
+.log{display:grid;gap:0;font-size:13.5px}
+.log div{display:grid;grid-template-columns:62px 70px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.log div:last-child{border-bottom:0}
+/* roadmap */
+.phase{display:grid;grid-template-columns:auto 1fr;gap:16px;padding:18px 0;border-bottom:1px solid var(--line)}
+.phase:last-child{border-bottom:0}
+.phase .tag{font:500 12px var(--mono);color:var(--accent);padding-top:3px;min-width:34px}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:14px;padding:3px 0}
+.check input{margin-top:4px;accent-color:var(--accent);width:16px;height:16px;flex:none}
+.check input:checked+span{color:var(--muted);text-decoration:line-through}
+.progress{height:8px;border-radius:4px;background:var(--grid);overflow:hidden}
+.progress i{display:block;height:100%;background:var(--accent);transition:width .2s}
+footer{margin-top:40px;color:var(--muted);font-size:13px;display:grid;gap:4px}
+footer a{color:var(--ink-2)}
+@media (max-width:560px){.kv{grid-template-columns:1fr}.log div{grid-template-columns:54px 1fr}.log div span:nth-child(2){display:none}.brand small{display:none}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top"><div class="topin">
+  <div class="brand">Tradebot Blueprint <small>v0.4 · 2026-09-25</small></div>
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" data-tab="overview" id="t-overview">Overview</button>
+    <button role="tab" data-tab="repos" id="t-repos">Repos</button>
+    <button role="tab" data-tab="pipeline" id="t-pipeline">Pipeline</button>
+    <button role="tab" data-tab="monitor" id="t-monitor">Monitor</button>
+    <button role="tab" data-tab="roadmap" id="t-roadmap">Roadmap</button>
+  </nav>
+</div></header>
+
+<main class="wrap">
+
+<!-- OVERVIEW -->
+<section class="view" id="overview" hidden>
+  <div class="hero">
+    <span class="eyebrow">Plan · paper trading first</span>
+    <h1>Build your own pipeline. Borrow the best parts from the top repos.</h1>
+    <p class="lede">Twelve leading open-source trading projects, ranked and sorted by the job each one does. The recommended build is a small Python pipeline you run by hand, one step at a time: get data, test, check risk, place paper orders, review. The same shape as your CFB card workflow.</p>
+  </div>
+
+  <div class="panel" style="display:grid;gap:14px">
+    <div class="chead" style="margin:0"><h2>Recommended stack</h2><span class="pill p-prop">Proposed</span></div>
+    <div class="stack" id="stack"></div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel" style="display:grid;gap:14px">
+      <h2>Status</h2>
+      <ul class="clean" style="font-size:14px">
+        <li><span class="pill p-done">Done</span>&nbsp; ELI TERMINAL live on Vercel: <a href="https://tb-terminal-five.vercel.app" style="color:var(--accent)">tb-terminal-five.vercel.app</a> (Vercel sign-in + passcode). Keys connected, v0.4.0 verified.</li>
+        <li><span class="pill p-done">Done</span>&nbsp; Order ticket, live ticker search, TradingView-style charts (1D to ALL), Benchmark tab, trained paper bot for stocks (3 weekday runs, 3+ trades a day goal, GTC brackets, no margin) and crypto (own training, standing stops, daily run)</li>
+        <li><span class="pill p-done">Done</span>&nbsp; Bot tab with live trades, reasons, animated charts and activity feed; exchange-style Crypto tab</li>
+        <li><span class="pill p-cfg">Configured, untested</span>&nbsp; Real crypto bot orders, GTC re-arm of Friday's trades, the daily crypto run and the new chart ranges against real Alpaca responses</li>
+        <li><span class="pill p-prop">Proposed</span>&nbsp; Options bot (last), Claude check on each bot trade, earnings filter, Telegram alerts, GitHub auto-deploys</li>
+      </ul>
+      <p class="muted" style="font-size:13px">The Monitor tab runs on generated sample numbers so you can see the layout. It is not connected to any account.</p>
+    </div>
+    <div class="panel" style="display:grid;gap:14px">
+      <h2>Decisions you need to make</h2>
+      <div class="decision"><h3>1. Market: decided</h3><p style="font-size:14px;color:var(--ink-2)">Stocks, options and crypto, all through Alpaca's free paper account. Freqtrade stays an option for automated crypto later.</p></div>
+      <div class="decision"><h3>2. Style: decided</h3><p style="font-size:14px;color:var(--ink-2)">Swing plays on daily bars, intraday setups, option ideas and long-term holds, all in one terminal. Free data is IEX-only, so intraday volume is partial.</p></div>
+      <div class="decision"><h3>3. Hosting: decided</h3><p style="font-size:14px;color:var(--ink-2)">Vercel free plan, project <code>tb-terminal</code>. No domain or local program needed. Next: add the Alpaca keys, then move the source to a private GitHub repo.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- REPOS -->
+<section class="view" id="repos" hidden>
+  <div style="display:grid;gap:8px">
+    <span class="eyebrow">Leaderboard · stars as of 2026-09-25</span>
+    <h2 style="font-size:30px">Top trading-bot repositories</h2>
+    <p class="lede">Stars measure popularity, not quality. The verdict column says what each repo is for in this build. Click a row for details.</p>
+  </div>
+  <div class="toolbar" id="rolefilter" role="group" aria-label="Filter by role"></div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr>
+        <th><button data-sort="name">Repository</button></th>
+        <th><button data-sort="stars">Stars ↓</button></th>
+        <th>Role</th>
+        <th>Language</th>
+        <th>License</th>
+        <th><button data-sort="verdict">Verdict</button></th>
+      </tr></thead>
+      <tbody id="repobody"></tbody>
+    </table>
+  </div>
+  <p class="muted" style="font-size:13px">Verdicts: <span class="pill v-use">Use</span> part of the recommended build · <span class="pill v-alt">Alternative</span> swap-in for a different track · <span class="pill v-study">Study</span> read for ideas, don't depend on it · <span class="pill v-skip">Skip</span> not a fit right now.</p>
+</section>
+
+<!-- PIPELINE -->
+<section class="view" id="pipeline" hidden>
+  <div class="chead" style="align-items:flex-end">
+    <div style="display:grid;gap:8px">
+      <span class="eyebrow">Ten stages · each one a manual command</span>
+      <h2 style="font-size:30px">The pipeline</h2>
+    </div>
+    <div class="seg" role="group" aria-label="Market track">
+      <button data-track="stocks" aria-pressed="true">Stocks · Alpaca</button>
+      <button data-track="crypto" aria-pressed="false">Crypto · Freqtrade</button>
+    </div>
+  </div>
+  <p class="lede" id="tracknote"></p>
+  <div class="lanes"><span><b>RESEARCH</b> offline, run any time</span><span><b>DAILY</b> the run-by-hand loop</span><span><b>REVIEW</b> weekly</span></div>
+  <div class="flow" id="flow"></div>
+  <div class="panel" id="stagedetail"></div>
+</section>
+
+<!-- MONITOR -->
+<section class="view" id="monitor" hidden>
+  <div class="banner"><b>SAMPLE DATA</b><span>Generated numbers that show what this screen will look like once the ledger export is wired in (roadmap phase 4). Nothing here comes from a real account.</span></div>
+  <div class="chead" style="margin:0">
+    <div style="display:grid;gap:6px"><span class="eyebrow">Paper account · $100,000 start</span><h2 style="font-size:30px">Bot monitor</h2></div>
+    <div class="seg" role="group" aria-label="Time range" id="range">
+      <button data-range="21" aria-pressed="false">1M</button>
+      <button data-range="63" aria-pressed="false">3M</button>
+      <button data-range="126" aria-pressed="true">6M</button>
+    </div>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <div class="panel">
+    <div class="chead"><h3>Equity vs. buy-and-hold benchmark</h3>
+      <div class="legend"><span><i style="background:var(--s1)"></i>Strategy</span><span><i style="background:var(--s2)"></i>Benchmark (SPY)</span></div></div>
+    <div class="chartbox" id="eqchart"></div>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <div class="chead"><h3>Drawdown from peak</h3><span class="muted mono" style="font-size:12px">stop at −10%</span></div>
+      <div class="chartbox" id="ddchart"></div>
+    </div>
+    <div class="panel" style="display:grid;gap:12px;align-content:start">
+      <div class="chead" style="margin:0"><h3>Risk gates</h3><span class="muted mono" style="font-size:12px">checked before every order</span></div>
+      <div class="gates" id="gates"></div>
+      <div class="switch"><div><b>Kill switch</b><div class="muted" style="font-size:13px" id="killtext">Off · orders allowed</div></div><button class="toggle" id="kill" role="switch" aria-checked="false" aria-label="Kill switch"></button></div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><div class="chead"><h3>Open positions</h3><span class="muted mono" style="font-size:12px" id="posct"></span></div>
+      <div style="overflow-x:auto"><table style="min-width:440px"><thead><tr><th>Symbol</th><th>Qty</th><th>Entry</th><th>Last</th><th>P&amp;L</th><th>Stop</th></tr></thead><tbody id="positions"></tbody></table></div></div>
+    <div class="panel"><div class="chead"><h3>Signal and order log</h3><span class="muted mono" style="font-size:12px">today</span></div><div class="log" id="log"></div></div>
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section class="view" id="roadmap" hidden>
+  <div style="display:grid;gap:8px">
+    <span class="eyebrow">Build order · checkboxes save in this browser only</span>
+    <h2 style="font-size:30px">Roadmap</h2>
+    <p class="lede">Each phase ends in something you can run and check. Real money stays off until the paper results match the backtest.</p>
+  </div>
+  <div class="panel" style="display:grid;gap:8px"><div class="chead" style="margin:0"><b>Progress</b><span class="num" id="progtext"></span></div><div class="progress"><i id="progbar" style="width:0"></i></div></div>
+  <div class="panel" id="phases" style="padding-block:4px"></div>
+</section>
+
+<footer>
+  <span>Sources: GitHub repository pages (read 2026-09-25) · <a href="https://docs.alpaca.markets/us/docs/paper-trading">Alpaca paper trading docs</a> · <a href="https://docs.alpaca.markets/us/docs/about-market-data-api">Alpaca market data plans</a></span>
+  <span>Research and planning only. Not financial advice. Backtests and paper results do not predict live results.</span>
+</footer>
+</main>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- tabs ---------- */
+const TABS=['overview','repos','pipeline','monitor','roadmap'];
+function show(t){ if(!TABS.includes(t)) t='overview';
+  TABS.forEach(x=>{$('#'+x).hidden=x!==t; $('#t-'+x).setAttribute('aria-selected',x===t)});
+  store.set('tb.tab',t); if(t==='monitor') drawCharts(); }
+$$('nav.tabs button').forEach(b=>b.addEventListener('click',()=>{show(b.dataset.tab); try{history.replaceState(null,'','#'+b.dataset.tab)}catch(e){}}));
+
+/* ---------- stack ---------- */
+const STACK=[
+ ['Data + paper broker','Alpaca (alpaca-py)','Free paper account, $100k simulated. Stocks, options, crypto.'],
+ ['Crypto data + orders','CCXT','One API for 100+ exchanges. Crypto track only.'],
+ ['Research backtests','vectorbt','Test thousands of parameter combos in seconds.'],
+ ['Storage','SQLite + Parquet','Same pattern as cfb_history.sqlite3.'],
+ ['Alerts','Telegram bot','You already run a Telegram channel.'],
+ ['Later: engine','NautilusTrader','Same code for backtest and live, once the basics work.']];
+$('#stack').innerHTML=STACK.map(s=>`<div class="stackitem"><span class="role">${s[0]}</span><span class="pick">${s[1]}</span><span style="font-size:13.5px;color:var(--ink-2)">${s[2]}</span></div>`).join('');
+
+/* ---------- repos ---------- */
+const REPOS=[
+ {n:'TradingAgents',o:'TauricResearch',s:98000,r:'AI / LLM',l:'Python',lic:'Apache-2.0',v:'Study',
+  d:'Multi-agent LLM framework that role-plays a trading firm: analysts, bull and bear researchers, a trader, risk managers and a portfolio manager.',
+  fit:'Good source of prompts for a daily research note. Keep it advisory: its own README says results are non-deterministic and for research use. Never let it place orders.',
+  rel:'v0.3.1 · Jul 2026'},
+ {n:'freqtrade',o:'freqtrade',s:52100,r:'Bot framework',l:'Python',lic:'GPL-3.0',v:'Alternative',
+  d:'All-in-one crypto bot: backtesting, dry-run paper mode, web UI (FreqUI), Telegram control, and FreqAI machine learning.',
+  fit:'The fastest route if you pick crypto. Covers most of the pipeline out of the box. Check which supported exchanges serve North Carolina residents.',
+  rel:'2026.6 · Jun 29 2026'},
+ {n:'qlib',o:'microsoft',s:47400,r:'AI / LLM',l:'Python',lic:'MIT',v:'Study',
+  d:'Microsoft\'s AI quant research platform: factor datasets (Alpha158/360), 20+ models, backtesting, and RD-Agent for automated factor mining.',
+  fit:'Heavy for a first build. Worth reading for how it structures features and walk-forward retraining. Last tagged release is from 2022.',
+  rel:'v0.9.0 · Dec 2022 (last tag)'},
+ {n:'ccxt',o:'ccxt',s:43900,r:'Data / broker',l:'JS/Python/+6',lic:'MIT',v:'Use',
+  d:'Unified API for 100+ crypto exchanges and some prediction markets, in eight languages.',
+  fit:'The data and order layer for the crypto track (Freqtrade uses it underneath). Not needed for stocks.',
+  rel:'Active'},
+ {n:'nautilus_trader',o:'nautechsystems',s:29100,r:'Engine',l:'Rust/Python',lic:'LGPL-3.0',v:'Alternative',
+  d:'Production-grade event-driven engine. The same strategy code runs in backtest and live. Integrates Interactive Brokers, Binance, Coinbase, Kraken, Betfair and more.',
+  fit:'The graduation path once a strategy survives paper trading. Steeper learning curve, so not the first thing to build on.',
+  rel:'2.0 release candidate'},
+ {n:'backtrader',o:'mementum',s:23300,r:'Backtest',l:'Python',lic:'GPL-3.0',v:'Study',
+  d:'The classic Python event-driven backtesting library. Huge number of tutorials use it.',
+  fit:'Useful for learning from tutorials. vectorbt is faster for research and Nautilus is better for live, so it is not in the recommended build.',
+  rel:'Slow-moving'},
+ {n:'Lean',o:'QuantConnect',s:21200,r:'Engine',l:'C#/Python',lic:'Apache-2.0',v:'Alternative',
+  d:'QuantConnect\'s open engine for stocks, options, futures and forex, with brokerage plug-ins.',
+  fit:'Strong if you would rather use QuantConnect\'s hosted research and data. The engine is C#, strategies can be Python.',
+  rel:'Active'},
+ {n:'hummingbot',o:'hummingbot',s:19500,r:'Bot framework',l:'Python',lic:'Apache-2.0',v:'Skip',
+  d:'High-frequency crypto market making and arbitrage, with a dashboard for managing bot instances.',
+  fit:'Market making is a different business from directional trading and needs always-on hosting and capital. Not a first project.',
+  rel:'Active'},
+ {n:'FinRL',o:'AI4Finance-Foundation',s:16300,r:'AI / LLM',l:'Python',lic:'MIT',v:'Skip',
+  d:'Deep reinforcement learning for trading. Educational framework.',
+  fit:'Last release 2022 and the team now points new users to FinRL-X. Reinforcement learning overfits easily on market data.',
+  rel:'v0.3.5 · Jun 2022'},
+ {n:'vectorbt',o:'polakowo',s:8700,r:'Backtest',l:'Python',lic:'Apache-2.0 + Commons Clause',v:'Use',
+  d:'Vectorized backtesting on NumPy and Numba. Tests thousands of strategy variants at once.',
+  fit:'The research stage: sweep parameters, then confirm the winner out-of-sample. License blocks selling a product built on it, which does not affect personal use.',
+  rel:'Active · PRO version exists'},
+ {n:'jesse',o:'jesse-ai',s:8500,r:'Bot framework',l:'Python',lic:'MIT',v:'Alternative',
+  d:'Crypto framework with a polished dashboard: charts, backtests, paper and live, Optuna tuning, Monte Carlo tests, and an MCP server for AI assistants.',
+  fit:'A strong alternative to Freqtrade for crypto if you want the built-in research tools. Live trading features are part of their paid offering, so check the current terms.',
+  rel:'Active'},
+ {n:'alpaca-py',o:'alpacahq',s:1500,r:'Data / broker',l:'Python',lic:'Apache-2.0',v:'Use',
+  d:'Official Python SDK for Alpaca: trading, market data and streaming for stocks, options and crypto.',
+  fit:'The stocks-track backbone. Free paper account, free IEX data (200 calls/min, 30 streaming symbols). Low stars because it is an SDK, not a framework.',
+  rel:'Active'}];
+const ROLES=['All','Bot framework','Engine','Backtest','Data / broker','AI / LLM'];
+const VORD={Use:0,Alternative:1,Study:2,Skip:3};
+const VCLS={Use:'v-use',Alternative:'v-alt',Study:'v-study',Skip:'v-skip'};
+let role=store.get('tb.role','All'), sortKey='stars', openRepo=null;
+const maxS=Math.max(...REPOS.map(r=>r.s));
+$('#rolefilter').innerHTML=ROLES.map(r=>`<button class="chip" data-role="${r}" aria-pressed="${r===role}">${r}</button>`).join('');
+$('#rolefilter').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;role=b.dataset.role;store.set('tb.role',role);$$('#rolefilter .chip').forEach(c=>c.setAttribute('aria-pressed',c.dataset.role===role));renderRepos();});
+$$('th button[data-sort]').forEach(b=>b.addEventListener('click',()=>{sortKey=b.dataset.sort;$$('th button[data-sort]').forEach(x=>x.textContent=x.textContent.replace(' ↓',''));b.textContent+=' ↓';renderRepos();}));
+function renderRepos(){
+  let rows=REPOS.filter(r=>role==='All'||r.r===role);
+  rows.sort((a,b)=>sortKey==='stars'?b.s-a.s:sortKey==='name'?a.n.localeCompare(b.n):(VORD[a.v]-VORD[b.v])||(b.s-a.s));
+  $('#repobody').innerHTML=rows.map(r=>{
+    const open=openRepo===r.n;
+    return `<tr class="row" tabindex="0" data-n="${r.n}" aria-expanded="${open}">
+      <td><div class="rname"><a href="https://github.com/${r.o}/${r.n}" target="_blank" rel="noopener">${r.o}/${r.n}</a></div><div class="muted" style="font-size:12.5px">${esc(r.rel)}</div></td>
+      <td><span class="num">${r.s>=1000?(r.s/1000).toFixed(1)+'k':r.s}</span><div class="bar"><i style="width:${(r.s/maxS*100).toFixed(1)}%"></i></div></td>
+      <td>${r.r}</td><td class="mono" style="font-size:13px">${r.l}</td><td class="mono" style="font-size:12.5px">${esc(r.lic)}</td>
+      <td><span class="pill ${VCLS[r.v]}">${r.v}</span></td></tr>`+
+      (open?`<tr class="detail"><td colspan="6"><dl class="kv"><dt>What it is</dt><dd>${esc(r.d)}</dd><dt>Fit for you</dt><dd>${esc(r.fit)}</dd></dl></td></tr>`:'');
+  }).join('');
+}
+$('#repobody').addEventListener('click',e=>{if(e.target.closest('a'))return;const tr=e.target.closest('tr.row');if(!tr)return;openRepo=openRepo===tr.dataset.n?null:tr.dataset.n;renderRepos();});
+$('#repobody').addEventListener('keydown',e=>{if(e.key!=='Enter'&&e.key!==' ')return;const tr=e.target.closest('tr.row');if(!tr)return;e.preventDefault();openRepo=openRepo===tr.dataset.n?null:tr.dataset.n;renderRepos();const again=document.querySelector(`tr.row[data-n="${tr.dataset.n}"]`);again&&again.focus();});
+renderRepos();
+
+/* ---------- pipeline ---------- */
+const STAGES=[
+ {id:'ingest',t:'Ingest',lane:'Daily',tl:'Pull daily bars',job:'Download end-of-day price bars for your watchlist and save them untouched.',
+  stocks:['alpaca-py','Alpaca Basic data (free)'],crypto:['ccxt','freqtrade download-data'],
+  in:'Watchlist in config/settings.toml', out:'data/bars/<symbol>.parquet', cmd:'python -m tradebot ingest',
+  guard:['Refuse to continue if the newest bar is older than one trading day (the same idea as your 12-hour stale-odds rule).','Free tier: 200 API calls per minute, IEX feed only.']},
+ {id:'store',t:'Store',lane:'Daily',tl:'Clean + save',job:'Validate bars (no gaps, no duplicates, split-adjusted) and index them. One SQLite file holds the ledger.',
+  stocks:['pandas','pyarrow','sqlite3'],crypto:['pandas','sqlite3'],
+  in:'Raw parquet', out:'data/tradebot.sqlite3 (tables: bars_meta, signals, orders, fills, positions, equity)', cmd:'python -m tradebot store',
+  guard:['Schema lives in one file (tradebot/schema.sql) so no stale copies.']},
+ {id:'features',t:'Features',lane:'Daily',tl:'Indicators',job:'Compute the inputs a strategy reads: returns, moving averages, volatility (ATR), volume ratios.',
+  stocks:['pandas','numpy'],crypto:['pandas','numpy','FreqAI (optional)'],
+  in:'Clean bars', out:'data/features.parquet', cmd:'python -m tradebot features',
+  guard:['Every feature uses only data available at that bar\'s close. No peeking ahead.']},
+ {id:'signal',t:'Signal',lane:'Daily',tl:'Strategy rules',job:'Turn features into buy, sell or hold with a reason string. Start with one simple rule-based strategy.',
+  stocks:['tradebot/strategies/*.py'],crypto:['Freqtrade IStrategy class'],
+  in:'Features', out:'signals table rows with reason text', cmd:'python -m tradebot signal',
+  guard:['PASS is a valid output, the same as your betting card.','Optional: TradingAgents-style LLM note is saved next to the signal as commentary only.']},
+ {id:'backtest',t:'Backtest',lane:'Research',tl:'Prove it first',job:'Replay the strategy on history with fees and slippage. Tune on older data, then test once on data it has never seen.',
+  stocks:['vectorbt','NautilusTrader (later)'],crypto:['freqtrade backtesting','vectorbt'],
+  in:'Bars + strategy', out:'reports/backtest_<date>.html + metrics json', cmd:'python -m tradebot backtest --strategy trend_v1',
+  guard:['Walk-forward split: train years, then a held-out test year, like treating 2024-25 as dev data in the CFB model.','Must beat buy-and-hold after costs on the test window, or the strategy does not ship.']},
+ {id:'risk',t:'Risk gate',lane:'Daily',tl:'Can this order go?',job:'Size each order and block anything that breaks a limit. Runs before every order, no exceptions.',
+  stocks:['tradebot/risk.py'],crypto:['Freqtrade stoploss + protections'],
+  in:'Signals + current positions', out:'Approved or rejected orders with the rule that decided', cmd:'python -m tradebot risk',
+  guard:['Proposed limits: 1% of equity at risk per trade, max 5 positions, max 20% in one symbol, stop new orders after a 2% daily loss, pause at 10% drawdown.','Kill switch file (KILL) blocks every order.']},
+ {id:'execute',t:'Execute',lane:'Daily',tl:'Paper orders',job:'Send approved orders to the paper account and record the broker\'s order IDs.',
+  stocks:['alpaca-py TradingClient (paper=True)'],crypto:['freqtrade trade --dry-run'],
+  in:'Approved orders', out:'orders table', cmd:'python -m tradebot paper',
+  guard:['Paper keys only. A live key lives under a different variable name and the code refuses it unless LIVE=1 is set by hand.','Alpaca paper does not simulate slippage, market impact or fees, so expect live to be worse.']},
+ {id:'ledger',t:'Ledger',lane:'Daily',tl:'Reconcile',job:'Pull fills and positions back from the broker and check they match what the bot thinks it holds.',
+  stocks:['alpaca-py','sqlite3'],crypto:['Freqtrade SQLite db'],
+  in:'Broker account state', out:'fills, positions, equity tables', cmd:'python -m tradebot reconcile',
+  guard:['Any mismatch flips the kill switch and sends an alert.']},
+ {id:'report',t:'Dashboard + alerts',lane:'Daily',tl:'See it',job:'Export one JSON snapshot that this dashboard reads, and send a short Telegram summary.',
+  stocks:['tradebot/export.py','Telegram Bot API'],crypto:['FreqUI','Freqtrade Telegram'],
+  in:'Ledger', out:'dashboard/data.json + Telegram message', cmd:'python -m tradebot export && python -m tradebot alert',
+  guard:['Alerts go to you privately, not the friends channel.']},
+ {id:'review',t:'Weekly review',lane:'Review',tl:'Paper vs backtest',job:'Compare paper results with what the backtest predicted. Big gaps mean the backtest was too optimistic.',
+  stocks:['pandas','this dashboard'],crypto:['FreqUI','pandas'],
+  in:'A week of ledger data', out:'reports/week_<date>.md', cmd:'python -m tradebot review',
+  guard:['Change the strategy only between weeks, never mid-week.']}];
+let track=store.get('tb.track','stocks'), stage=store.get('tb.stage','ingest');
+const NOTES={stocks:'Stocks track: Alpaca\'s free paper account ($100,000 simulated) with free IEX data. You write the pipeline in Python, which makes it yours to change and fits daily-bar swing trading run by hand.',
+ crypto:'Crypto track: Freqtrade already covers most stages (data download, backtest, dry-run paper mode, web UI, Telegram). You write the strategy class and configure the rest. Markets run 24/7, so a bot usually runs on an always-on machine.'};
+function renderFlow(){
+  $$('.seg [data-track]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.track===track));
+  $('#tracknote').textContent=NOTES[track];
+  $('#flow').innerHTML=STAGES.map((s,i)=>`<button class="stage" data-id="${s.id}" aria-pressed="${s.id===stage}"><span class="lane">${s.lane}</span><span class="n">${String(i+1).padStart(2,'0')}</span><span class="t">${s.t}</span><span class="tl">${s.tl}</span></button>`).join('');
+  const s=STAGES.find(x=>x.id===stage)||STAGES[0];
+  $('#stagedetail').innerHTML=`<div class="detailcard">
+    <div style="display:grid;gap:14px;align-content:start">
+      <div class="chead" style="margin:0"><h2>${s.t}</h2><span class="pill p-prop">Proposed</span></div>
+      <p style="color:var(--ink-2)">${esc(s.job)}</p>
+      <div><div class="eyebrow" style="margin-bottom:6px">Tools · ${track}</div><div class="toolrow">${s[track].map(t=>`<span class="tool">${esc(t)}</span>`).join('')}</div></div>
+      <div><div class="eyebrow" style="margin-bottom:6px">Manual command</div><pre class="code">${esc(track==='crypto'&&s.crypto[0].startsWith('freqtrade')?s.crypto[0]:s.cmd)}</pre></div>
+    </div>
+    <div style="display:grid;gap:14px;align-content:start">
+      <dl class="kv"><dt>Reads</dt><dd>${esc(s.in)}</dd><dt>Writes</dt><dd class="mono" style="font-size:13px">${esc(s.out)}</dd></dl>
+      <div><div class="eyebrow" style="margin-bottom:6px">Guardrails</div><ul class="clean" style="gap:8px;font-size:14px">${s.guard.map(g=>`<li style="padding-left:14px;border-left:2px solid var(--line-2)">${esc(g)}</li>`).join('')}</ul></div>
+    </div></div>`;
+}
+$('#flow').addEventListener('click',e=>{const b=e.target.closest('.stage');if(!b)return;stage=b.dataset.id;store.set('tb.stage',stage);renderFlow();const n=document.querySelector(`.stage[data-id="${stage}"]`);n&&n.focus();});
+$$('.seg [data-track]').forEach(b=>b.addEventListener('click',()=>{track=b.dataset.track;store.set('tb.track',track);renderFlow();}));
+renderFlow();
+
+/* ---------- monitor (sample data) ---------- */
+let seed=20260925; const rnd=()=>{seed=(seed*1664525+1013904223)%4294967296;return seed/4294967296};
+const gauss=()=>{let u=0,v=0;while(!u)u=rnd();while(!v)v=rnd();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)};
+const N=126, days=[], strat=[], bench=[];
+let d=new Date(2026,2,27), se=100000, be=100000;
+while(days.length<N){d=new Date(d.getTime()+864e5); const w=d.getDay(); if(w===0||w===6)continue;
+  const m=0.0004+0.009*gauss(); be*=1+m; se*=1+0.00055+0.55*m+0.006*gauss();
+  days.push(new Date(d)); strat.push(se); bench.push(be);}
+let range=store.get('tb.range',126);
+const fmt$=v=>'$'+Math.round(v).toLocaleString('en-US');
+const fmtP=v=>(v>=0?'+':'−')+Math.abs(v*100).toFixed(2)+'%';
+const fmtD=dt=>dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+function slice(){const a=N-range;const s0=strat[a-1]??100000,b0=bench[a-1]??100000;return{days:days.slice(a),s:strat.slice(a),b:bench.slice(a),s0,b0};}
+function stats(){const x=slice();let peak=x.s0,mdd=0;const dd=x.s.map(v=>{peak=Math.max(peak,v);const r=v/peak-1;mdd=Math.min(mdd,r);return r});
+  const rets=x.s.map((v,i)=>v/(i?x.s[i-1]:x.s0)-1);const mu=rets.reduce((a,b)=>a+b,0)/rets.length;const sd=Math.sqrt(rets.reduce((a,b)=>a+(b-mu)**2,0)/rets.length);
+  return{x,dd,mdd,sharpe:mu/sd*Math.sqrt(252),ret:x.s.at(-1)/x.s0-1,bret:x.b.at(-1)/x.b0-1,day:rets.at(-1),cur:dd.at(-1)};}
+function renderKpis(st){
+  const k=[['Equity',fmt$(st.x.s.at(-1)),fmtP(st.day)+' today',st.day>=0],
+           ['Return',fmtP(st.ret),'vs '+fmtP(st.bret)+' SPY',st.ret>=st.bret],
+           ['Max drawdown',fmtP(st.mdd),'now '+fmtP(st.cur),st.mdd>-0.1],
+           ['Sharpe (ann.)',st.sharpe.toFixed(2),'daily returns',st.sharpe>1],
+           ['Exposure','62%','4 of 5 slots',true]];
+  $('#kpis').innerHTML=k.map(r=>`<div class="kpi"><span class="l">${r[0]}</span><span class="v">${r[1]}</span><span class="d ${r[3]?'up':'down'}">${r[2]}</span></div>`).join('');
+}
+function lineChart(el,series,opts){
+  const W=el.clientWidth||700,H=opts.h||260,m={l:62,r:14,t:10,b:26},iw=W-m.l-m.r,ih=H-m.t-m.b,n=series[0].v.length;
+  let lo=Math.min(...series.flatMap(s=>s.v)),hi=Math.max(...series.flatMap(s=>s.v));if(opts.zeroTop){hi=0;lo=Math.min(lo,opts.floor??lo);}
+  const pad=(hi-lo)*.08||1;lo-=opts.zeroTop?pad:pad;hi+=opts.zeroTop?0:pad;
+  const X=i=>m.l+(n<2?0:i/(n-1)*iw),Y=v=>m.t+(1-(v-lo)/(hi-lo))*ih;
+  const ticks=[];for(let i=0;i<=4;i++)ticks.push(lo+(hi-lo)*i/4);
+  const xt=[0,Math.floor((n-1)/3),Math.floor(2*(n-1)/3),n-1];
+  let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${opts.label}">`;
+  ticks.forEach(t=>{svg+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--grid)" stroke-width="1"/><text x="${m.l-8}" y="${Y(t)+4}" text-anchor="end">${opts.fy(t)}</text>`});
+  xt.forEach(i=>{svg+=`<text x="${X(i)}" y="${H-6}" text-anchor="${i===0?'start':i===n-1?'end':'middle'}">${fmtD(opts.days[i])}</text>`});
+  if(opts.refLine!=null&&opts.refLine>lo)svg+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(opts.refLine)}" y2="${Y(opts.refLine)}" stroke="var(--crit)" stroke-dasharray="4 4" stroke-width="1.5"/><text x="${W-m.r}" y="${Y(opts.refLine)-6}" text-anchor="end" style="fill:var(--crit)">pause at ${opts.fy(opts.refLine)}</text>`;
+  series.forEach(s=>{const p=s.v.map((v,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join('');
+    if(s.area){const base=opts.zeroTop?Y(0):Y(lo);svg+=`<path d="${p}L${X(n-1)},${base}L${X(0)},${base}Z" fill="${s.c}" fill-opacity=".14"/>`;}
+    svg+=`<path d="${p}" fill="none" stroke="${s.c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    svg+=`<circle cx="${X(n-1)}" cy="${Y(s.v[n-1])}" r="4" fill="${s.c}" stroke="var(--panel)" stroke-width="2"/>`;});
+  svg+=`<line class="xh" x1="0" x2="0" y1="${m.t}" y2="${m.t+ih}" stroke="var(--ink-2)" stroke-width="1" visibility="hidden"/>`;
+  series.forEach((s,j)=>svg+=`<circle class="dot${j}" r="4.5" fill="${s.c}" stroke="var(--panel)" stroke-width="2" visibility="hidden"/>`);
+  svg+=`<rect x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent" class="hit"/></svg><div class="tip" hidden></div>`;
+  el.innerHTML=svg;
+  const sv=el.querySelector('svg'),tip=el.querySelector('.tip'),xh=el.querySelector('.xh');
+  const move=ev=>{const r=sv.getBoundingClientRect(),sx=(ev.clientX-r.left)*W/r.width;let i=Math.round((sx-m.l)/iw*(n-1));i=Math.max(0,Math.min(n-1,i));
+    xh.setAttribute('x1',X(i));xh.setAttribute('x2',X(i));xh.setAttribute('visibility','visible');
+    series.forEach((s,j)=>{const c=el.querySelector('.dot'+j);c.setAttribute('cx',X(i));c.setAttribute('cy',Y(s.v[i]));c.setAttribute('visibility','visible')});
+    tip.hidden=false;tip.innerHTML=`<div style="opacity:.7">${fmtD(opts.days[i])}</div>`+series.map(s=>`<div><span class="sw" style="background:${s.c}"></span>${s.name} ${opts.fy(s.v[i],true)}</div>`).join('');
+    const px=X(i)*r.width/W,py=Math.min(...series.map(s=>Y(s.v[i])))*r.height/H;tip.style.left=Math.max(70,Math.min(r.width-70,px))+'px';tip.style.top=Math.max(40,py)+'px';};
+  const hit=el.querySelector('.hit');hit.addEventListener('pointermove',move);hit.addEventListener('pointerleave',()=>{tip.hidden=true;xh.setAttribute('visibility','hidden');series.forEach((s,j)=>el.querySelector('.dot'+j).setAttribute('visibility','hidden'))});
+}
+function drawCharts(){ if($('#monitor').hidden)return; const st=stats(); renderKpis(st);
+  const cs=getComputedStyle(document.documentElement),c1=cs.getPropertyValue('--s1').trim(),c2=cs.getPropertyValue('--s2').trim();
+  lineChart($('#eqchart'),[{name:'Strategy',v:st.x.s,c:c1,area:false},{name:'SPY',v:st.x.b,c:c2}],{days:st.x.days,label:'Equity curve',fy:(v,full)=>full?fmt$(v):'$'+(v/1000).toFixed(0)+'k',h:280});
+  lineChart($('#ddchart'),[{name:'Drawdown',v:st.dd,c:c1,area:true}],{days:st.x.days,label:'Drawdown',fy:v=>(v*100).toFixed(1)+'%',zeroTop:true,floor:-0.11,refLine:-0.10,h:220});
+}
+$$('#range button').forEach(b=>{b.setAttribute('aria-pressed',+b.dataset.range===range);b.addEventListener('click',()=>{range=+b.dataset.range;store.set('tb.range',range);$$('#range button').forEach(x=>x.setAttribute('aria-pressed',x===b));drawCharts();});});
+let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(drawCharts,120)});
+try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',drawCharts)}catch(e){}
+new MutationObserver(drawCharts).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+const POS=[['SPY',40,548.20,561.35,184.90],['MSFT',18,452.10,441.80,-8.25],['XLE',60,91.40,94.05,86.90],['AAPL',35,231.75,236.20,219.60]];
+$('#positions').innerHTML=POS.map(p=>{const pl=(p[3]-p[2])*p[1];return `<tr><td class="mono"><b>${p[0]}</b></td><td class="num">${p[1]}</td><td class="num">${p[2].toFixed(2)}</td><td class="num">${p[3].toFixed(2)}</td><td class="num ${pl>=0?'up':'down'}">${pl>=0?'+':'−'}$${Math.abs(pl).toFixed(0)}</td><td class="num muted">${p[4].toFixed(2)}</td></tr>`}).join('');
+$('#posct').textContent=POS.length+' positions · sample';
+const LOG=[['09:31','SIGNAL','XLE buy · 20/50-day trend cross, ATR 1.9%'],['09:31','RISK','XLE approved · 60 sh = 0.9% equity at risk'],['09:32','ORDER','XLE buy 60 @ market · paper'],['09:32','FILL','XLE 60 @ 91.40'],['09:33','SIGNAL','NVDA buy · trend cross'],['09:33','RISK','NVDA rejected · would breach 5-position limit'],['15:45','PASS','No exits triggered · stops unchanged']];
+const LC={SIGNAL:'var(--info)',RISK:'var(--warn)',ORDER:'var(--ink-2)',FILL:'var(--good)',PASS:'var(--muted)'};
+$('#log').innerHTML=LOG.map(l=>`<div><span class="num muted">${l[0]}</span><span class="mono" style="font-size:12px;color:${LC[l[1]]}">${l[1]}</span><span>${esc(l[2])}</span></div>`).join('');
+
+const GATES=[['Risk per trade','0.9% of 1.0%',0.9],['Open positions','4 of 5',0.8],['Largest symbol weight','SPY 22% of 20%',1.1],['Daily loss','−0.4% of −2.0%',0.2],['Drawdown','−3.1% of −10%',0.31]];
+function renderGates(){const killed=$('#kill').getAttribute('aria-checked')==='true';
+  $('#gates').innerHTML=GATES.map(g=>{const s=killed?'crit':g[2]>1?'crit':g[2]>=0.8?'warn':'good';const lab=killed?'Blocked':s==='crit'?'Breach':s==='warn'?'Near limit':'OK';
+   return `<div class="gate"><div><div>${g[0]} <span class="muted num" style="font-size:12.5px">· ${g[1]}</span></div><div class="meter"><i style="width:${Math.min(100,g[2]*100)}%;background:var(--${s})"></i></div></div><span class="pill ${s==='good'?'p-done':s==='warn'?'p-cfg':'p-crit'}">${lab}</span></div>`}).join('');
+  $('#killtext').textContent=killed?'On · every new order is blocked':'Off · orders allowed';}
+$('#kill').addEventListener('click',e=>{const b=e.currentTarget;b.setAttribute('aria-checked',b.getAttribute('aria-checked')!=='true');renderGates();});
+renderGates();
+
+/* ---------- roadmap ---------- */
+const PHASES=[
+ ['P0','Decide and open accounts',['Pick the market: stocks (Alpaca) or crypto (Freqtrade)','Open an Alpaca paper-only account (free, email sign-up)','Store paper API keys as Windows environment variables, never in code or chat','Create a private GitHub repo named tradebot']],
+ ['P1','Skeleton, data and storage',['Create the folder, venv and requirements.txt','Write config/settings.toml with a 10-20 symbol watchlist','Build ingest and store commands; confirm bars land in parquet and SQLite','Write HANDOFF.md and keep it updated after every change']],
+ ['P2','First strategy and honest backtest',['Code one rule-based strategy with a reason string on every signal','Backtest in vectorbt with fees and slippage','Tune on older years only, then test once on the held-out year','Ship only if it beats buy-and-hold after costs on the test year']],
+ ['P3','Risk gate and paper orders',['Code the risk limits and the KILL file check','Place paper orders with one manual command','Confirm a rejected order logs which rule blocked it']],
+ ['P4','Ledger and live dashboard',['Reconcile fills and positions against the broker every run','Export dashboard/data.json and point this dashboard at it','Replace the sample numbers on the Monitor tab']],
+ ['P5','Alerts and weekly review',['Private Telegram summary after each run','Weekly paper-vs-backtest report','Run at least 3 months of paper trading before considering real money']],
+ ['P6','Optional upgrades',['Add an ML signal and compare it against the rule-based baseline','Add an LLM research note as commentary only','Port the strategy to NautilusTrader for backtest-live parity']]];
+let done=store.get('tb.done',{});
+function renderPhases(){let tot=0,ok=0;
+  $('#phases').innerHTML=PHASES.map(p=>`<div class="phase"><span class="tag">${p[0]}</span><div style="display:grid;gap:6px"><h3>${p[1]}</h3>${p[2].map((t,i)=>{const id=p[0]+'-'+i;tot++;if(done[id])ok++;return `<label class="check"><input type="checkbox" id="c-${id}" data-id="${id}" ${done[id]?'checked':''}><span>${esc(t)}</span></label>`}).join('')}</div></div>`).join('');
+  $('#progtext').textContent=`${ok} of ${tot} steps`;$('#progbar').style.width=(ok/tot*100)+'%';}
+$('#phases').addEventListener('change',e=>{const id=e.target.dataset.id;if(!id)return;done[id]=e.target.checked;store.set('tb.done',done);renderPhases();document.getElementById('c-'+id)?.focus();});
+renderPhases();
+
+const h=(location.hash||'').slice(1);show(TABS.includes(h)?h:store.get('tb.tab','overview'));
+})();
+</script>

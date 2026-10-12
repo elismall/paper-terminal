@@ -28,6 +28,7 @@ No build step, no npm dependencies, Node 22 (`package.json` engines), ES modules
 | `scripts/dev-server.mjs` | Local server, `npm run dev`. |
 | `.claude/agents/adversary-auditor.md` | The adversarial auditor agent (see "Auditing"). |
 | `.claude/skills/steward/SKILL.md` | How to manage changes, releases, PRs and this file. |
+| `docs/` | Notes carried over from the original `elismall/trading-bot` repo: the results log, Jev notes, the blueprint, old test runs, and `docs/legacy/` (its old tests, handoff and README). History, not run by anything; `docs/README.md` says what each file is. |
 | `.vercelignore` | Repo-only files the deployed site must not serve (Vercel serves every other file publicly). |
 
 ## Auth model (lib/core.js, lib/authguard.js, routes/session.js)
@@ -112,6 +113,11 @@ with scope "full".
   request through the `vercel.json` rewrite, because its anti-cache-busting check rejected the rewrite's own `__p` key (400), so
   the list fell back to the 14 bot coins; it now allows `__p`, tested through `api/router.js`. Fix (2) was first found by the
   weekly audit (PR #19) and is folded in here. Not yet confirmed on a deploy.
+- Two repos (2026-10-12): `elismall/trading-bot` is the original (v0.4.0 to v0.13.2, last change 2026-09-29); this repo started
+  2026-10-02 as a single v0.17.1 commit and is the only one worked on. Its `docs/` folder (results log, Jev notes, blueprint,
+  test runs) and old `tests/`, `HANDOFF.md` and `README.md` are now in `docs/` and `docs/legacy/` here, so Eli can archive it.
+  The live site still showed v0.17.1 that day: the Vercel project (`tb-terminal`, created 2026-09-25) is probably still linked to
+  trading-bot (not confirmed; the connector cannot read its settings). Eli is relinking it to this repo, production branch `main`.
 - v0.19.0 adds a search box to the Crypto tab's Market list, and that list is now the whole market: `routes/crypto.js` `?all=1`
   returns every tradable Alpaca `/USD` pair (asset list via `pget`, cached 6 hours per instance; needs keys, else the 14 bot
   coins), with price, 24h/7d/30d change, 24h dollar volume and a 48h sparkline, sorted by volume; CDN cache 60 s. It downloads
@@ -146,7 +152,6 @@ with scope "full".
   can trigger that download once a minute per instance (the 14-coin board already allowed a smaller version of this).
 - Header comments in `lib/schedule.js` and `routes/tick.js` still describe a Vercel Pro `*/5` cron; `vercel.json` now ships daily
   backups only and the README uses cron-job.org every 15 minutes.
-- `lib/history.js` and `lib/season.js` mention `docs/RESULTS-LOG.md`, which is not in the repo.
 - From the v0.18.0 review: `earnFlag`'s SEC lookup runs on the non-strict options route (as it did before in the other
   modes), and the partial-day pattern reads have not been checked against live data.
 - Bot strategy logic (`lib/botcore.js`, `lib/dca.js`, `lib/cryptobot.js`) has no unit tests; the audit covers the money guard
