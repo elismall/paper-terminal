@@ -5,7 +5,7 @@ the code, the rules that keep it safe, and what is open. **Keep it current:** an
 paths or the version updates this file in the same commit. The `steward` skill (`.claude/skills/steward/SKILL.md`) says how,
 and `npm run audit` fails if the version below is stale.
 
-**Current version:** 0.19.0 (`lib/version.js`; bump it with every deploy). Owner: Eli (`elismall`).
+**Current version:** 0.19.1 (`lib/version.js`; bump it with every deploy). Owner: Eli (`elismall`).
 Repo: https://github.com/elismall/paper-terminal
 
 ## What it is
@@ -89,7 +89,8 @@ What `npm run audit` covers:
   matches `lib/version.js`; `.vercelignore` covers repo-only files; every file parses.
   Also: README names every setting in `.env.example`, and no export in `lib/` or `routes/` goes unused.
 - `test/cryptomarket.test.js`: the Crypto tab's whole-market list (`/api/crypto?all=1`) with Alpaca faked: every tradable USD
-  coin once with its name, bar pages followed to the end, no plays, reads only; without keys, the bot's coins and no trading-API call.
+  coin once with its name, bar pages followed to the end, no plays, reads only; without keys, the bot's coins and no trading-API call;
+  also through the router the way `vercel.json` rewrites it (`/api/router?__p=crypto&all=1`).
 - `test/devserver.test.js`: the dev server refuses dotfiles, repo-only files, traversal and bad escapes, and keeps running.
 
 ## Outside hosts the server calls
@@ -103,7 +104,14 @@ on <area or diff>". It reads only, reports verified findings with severity, a fi
 as a GitHub issue labeled `audit`. Run it on every change to auth, orders, sizing, the kill switch, cron or storage, and weekly
 with scope "full".
 
-## Status as of 2026-10-08
+## Status as of 2026-10-12
+- v0.19.1 fixes the v0.19.0 crypto search, which Eli could not find on the live site. Two causes: (1) the search box sat in the
+  Market card at the bottom of the Crypto tab, below the chart, so it was out of sight; it is now the first card on the tab, with
+  a drop-down of matches (name, ticker, price, 24h; arrows + Enter or a tap opens the coin) that also covers coins from
+  `/api/symbols` the market list lacks. The Market list no longer filters by the search. (2) `/api/crypto?all=1` refused every
+  request through the `vercel.json` rewrite, because its anti-cache-busting check rejected the rewrite's own `__p` key (400), so
+  the list fell back to the 14 bot coins; it now allows `__p`, tested through `api/router.js`. Fix (2) was first found by the
+  weekly audit (PR #19) and is folded in here. Not yet confirmed on a deploy.
 - v0.19.0 adds a search box to the Crypto tab's Market list, and that list is now the whole market: `routes/crypto.js` `?all=1`
   returns every tradable Alpaca `/USD` pair (asset list via `pget`, cached 6 hours per instance; needs keys, else the 14 bot
   coins), with price, 24h/7d/30d change, 24h dollar volume and a 48h sparkline, sorted by volume; CDN cache 60 s. It downloads
@@ -112,7 +120,7 @@ with scope "full".
   cache-busting); a failed asset-list read is retried after 5 minutes. A download cut short blanks the coins whose newest bars
   are missing and sets `partial`, so stale numbers never show as current. Swing plays and the 30-second
   board stay on `CRYPTO_UNIVERSE`, so the bot's coins, signals and trading are unchanged. Client: `js/3-trade-bot-crypto.js`
-  (`cbBoard`, `cbRow`, `cbLoadAll`, the `#cb-q` box; Enter opens the first match). Any coin can be charted and traded by hand
+  (`cbBoard`, `cbRow`, `cbLoadAll`, the `#cb-q` box, moved to the top in v0.19.1). Any coin can be charted and traded by hand
   from the list, as the order ticket already allowed.
 - v0.18.0 (PR #16, merged 2026-10-08) added "Plays from the chart" on the Options tab: `lib/patterns.js` (5 chart patterns plus
   how often each worked before on that stock), a straddle/strangle builder in `lib/options.js`, `routes/options.js`
