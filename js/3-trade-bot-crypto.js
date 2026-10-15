@@ -211,7 +211,7 @@ async function runBotNow(k) {
 
 /* ---------- Crypto tab: exchange-style screen (paper orders via Alpaca) ---------- */
 const COIN = { BTC: ['Bitcoin', '#f7931a'], ETH: ['Ethereum', '#627eea'], SOL: ['Solana', '#9945ff'], XRP: ['XRP', '#8f9bb3'], DOGE: ['Dogecoin', '#c2a633'], AVAX: ['Avalanche', '#e84142'], LINK: ['Chainlink', '#2a5ada'], LTC: ['Litecoin', '#345d9d'], BCH: ['Bitcoin Cash', '#8dc351'], DOT: ['Polkadot', '#e6007a'], UNI: ['Uniswap', '#ff007a'], AAVE: ['Aave', '#b6509e'], SHIB: ['Shiba Inu', '#ffa409'], XTZ: ['Tezos', '#2c7df7'] };
-const CB = { sel: LS.get('cbsel', 'BTC/USD'), range: LS.get('cbrange', '1D'), side: 'buy', amt: '', stage: 'edit', res: null, filter: 'all', star: new Set(LS.get('cbstar', ['BTC/USD', 'ETH/USD', 'SOL/USD'])), chart: null, data: null, loadedKey: '', hover: null, q: '', all: null, allAt: 0, allBusy: false, names: {} };
+const CB = { sel: LS.get('cbsel', 'BTC/USD'), range: LS.get('cbrange', '1D'), side: 'buy', amt: '', stage: 'edit', res: null, filter: 'all', star: new Set(LS.get('cbstar', ['BTC/USD', 'ETH/USD', 'SOL/USD'])), chart: null, data: null, loadedKey: '', hover: null, q: '', qi: 0, all: null, allAt: 0, allBusy: false, names: {} };
 const tick = s => s.replace('/USD', '');
 const coinIcon = (s, sz = 32) => { const [n, c] = COIN[tick(s)] || [s, '#555']; return `<span class="cbico" style="--c:${c};--s:${sz}px" aria-hidden="true">${esc(tick(s).slice(0, 4))}</span>`; };
 const coinName = s => COIN[tick(s)]?.[0] || CB.names[s] || tick(s);
@@ -228,7 +228,7 @@ function cbLoadAll() {
   api('crypto', { all: 1 }).catch(e => ({ error: 'network', message: e.message })).then(j => {
     CB.all = j; CB.allAt = Date.now(); CB.allBusy = false;
     for (const r of j.board || []) if (r.n) CB.names[r.s] = r.n;
-    if ($('#cbroot')) { cbMkt(); cbHead(); }
+    if ($('#cbroot')) { cbMkt(); cbHead(); cbSearch(); }
   });
 }
 const cbVol = v => v == null ? '—' : v >= 1e9 ? '$' + (v / 1e9).toFixed(2) + 'B' : v >= 1e6 ? '$' + (v / 1e6).toFixed(1) + 'M' : v >= 1e3 ? '$' + (v / 1e3).toFixed(0) + 'K' : '$' + Math.round(v);
@@ -236,10 +236,11 @@ const usd = (v, d) => v == null || !isFinite(v) ? '—' : '$' + (+v).toLocaleStr
 const cbPos = () => (state.account?.positions || []).filter(p => p.cls === 'crypto').map(p => ({ ...p, sym: p.s.includes('/') ? p.s : p.s.replace(/USD$/, '/USD') }));
 function cbShell() {
   return `<div id="cbroot" class="cb"><div class="cbmain">
+    <section class="cbcard cbsearch"><input id="cb-q" class="cbq" type="search" placeholder="Search any coin by name or ticker (Bitcoin, PEPE, Ondo…)" aria-label="Search any coin" role="combobox" aria-controls="cb-sr" aria-expanded="false" autocomplete="off" spellcheck="false" value="${esc(CB.q)}"><div id="cb-sr" class="cbsr" role="listbox" hidden></div></section>
     <section class="cbcard"><div class="cbbal" id="cb-bal"></div></section>
     <section class="cbcard"><div class="cbhead" id="cb-head"></div><div class="cbrng" id="cb-rng">${['1H', '1D', '1W', '1M', '1Y', 'ALL'].map(r => `<button data-cbr="${r}" aria-pressed="${r === CB.range}">${r}</button>`).join('')}</div><div class="cbchart" id="cb-chart"></div><div class="cbstats" id="cb-stats"></div></section>
     <section class="cbcard"><h3>Your crypto</h3><div id="cb-assets"></div></section>
-    <section class="cbcard"><div class="cbmh"><h3>Market</h3><input id="cb-q" class="cbq" type="search" placeholder="Search every coin" aria-label="Search every coin" autocomplete="off" spellcheck="false" value="${esc(CB.q)}"><div class="cbpills" id="cb-f">${[['all', 'All assets'], ['star', 'Watchlist'], ['up', 'Top gainers'], ['down', 'Top losers']].map(([k, l]) => `<button data-cbf="${k}" aria-pressed="${k === CB.filter}">${l}</button>`).join('')}</div></div><div id="cb-mkt"></div></section>
+    <section class="cbcard"><div class="cbmh"><h3>Market</h3><div class="cbpills" id="cb-f">${[['all', 'All assets'], ['star', 'Watchlist'], ['up', 'Top gainers'], ['down', 'Top losers']].map(([k, l]) => `<button data-cbf="${k}" aria-pressed="${k === CB.filter}">${l}</button>`).join('')}</div></div><div id="cb-mkt"></div></section>
   </div><aside class="cbside"><section class="cbcard cbtrade" id="cb-trade"></section><section class="cbcard" id="cb-bot"></section></aside></div>`;
 }
 async function cbLoadChart(force) {
@@ -277,19 +278,39 @@ function cbMkt() {
   const plays = Object.fromEntries((cr?.plays || []).map(p => [p.s, p]));
   let rows = cbBoard(); const total = rows.length;
   if (CB.filter === 'star') rows = rows.filter(r => CB.star.has(r.s)); if (CB.filter === 'up') rows = rows.filter(r => r.chg24 > 0).sort((a, z) => z.chg24 - a.chg24); if (CB.filter === 'down') rows = rows.filter(r => r.chg24 < 0).sort((a, z) => a.chg24 - z.chg24);
-  // v0.19.0: search by ticker or name; tickers that start with what was typed come first
-  const q = CB.q.trim().toUpperCase();
-  if (q) rows = rows.filter(r => tick(r.s).includes(q) || coinName(r.s).toUpperCase().includes(q)).sort((a, z) => tick(z.s).startsWith(q) - tick(a.s).startsWith(q));
-  const info = CB.all?.board ? `${q || CB.filter !== 'all' ? `${rows.length} of ${total} coins · ` : ''}${esc(CB.all.note || '')}` : CB.all?.error ? `Only the bot's ${total} coins: the full market list did not load (${esc(CB.all.message || CB.all.error)}).` : 'Loading every coin…';
+  const info = CB.all?.board ? `${CB.filter !== 'all' ? `${rows.length} of ${total} coins · ` : ''}${esc(CB.all.note || '')}` : CB.all?.error ? `Only the bot's ${total} coins: the full market list did not load (${esc(CB.all.message || CB.all.error)}).` : 'Loading every coin…';
   el.innerHTML = `<div class="cbmut cbinfo">${info}</div>` + (rows.length ? `<div class="cbscroll"><table class="cbt cbmk"><thead><tr><th></th><th>Asset</th><th>Price</th><th>24h</th><th class="hm">7d</th><th class="hm">Volume (24h)</th><th class="hm">Chart (48h)</th><th class="hm">Bot signal</th><th></th></tr></thead><tbody>${rows.map(r => { const p = plays[r.s]; return `<tr data-cbsel="${esc(r.s)}" class="${r.s === CB.sel ? 'sel' : ''}"><td><button class="cbstar ${CB.star.has(r.s) ? 'on' : ''}" data-cbstar="${esc(r.s)}" aria-label="Watchlist">★</button></td><td><div class="cbas">${coinIcon(r.s)}<div><b>${esc(coinName(r.s))}</b><span>${esc(tick(r.s))}</span></div></div></td><td><b>${usd(r.p)}</b></td><td class="${r.chg24 >= 0 ? 'cbup' : 'cbdn'}">${r.chg24 == null ? '—' : (r.chg24 >= 0 ? '↗ ' : '↘ ') + Math.abs(r.chg24).toFixed(2) + '%'}</td><td class="hm ${r.d7 >= 0 ? 'cbup' : 'cbdn'}">${fpct(r.d7, 1)}</td><td class="hm">${cbVol(r.vol)}</td><td class="hm">${spk(r.spark)}</td><td class="hm">${p && p.dir === 'long' ? `<span class="cbsig">${esc(p.setup)} · ${p.score}</span>` : '<span class="cbmut">—</span>'}</td><td><button class="cbbtn sm" data-cbtrade="${esc(r.s)}">Trade</button></td></tr>`; }).join('')}</tbody></table></div>`
-    : `<div class="cbempty">${q ? `No coin matches “${esc(CB.q.trim())}”.${CB.all?.board ? '' : ' Still loading the full list.'}` : 'Nothing here yet. Star coins to build your watchlist.'}</div>`);
+    : '<div class="cbempty">Nothing here yet. Star coins to build your watchlist.</div>');
 }
-// v0.19.0: the search box sits in the shell (not redrawn), so typing keeps focus. Enter opens the first match; Esc clears.
-document.addEventListener('input', e => { if (e.target.id === 'cb-q') { CB.q = e.target.value; cbMkt(); } });
+// v0.19.1: the coin search is the first thing on the Crypto tab (in v0.19.0 it sat in the Market card at the bottom, out of
+// sight). It sits in the shell (not redrawn), so typing keeps focus; matches drop down under it. Coins come from the market list
+// with prices, plus any coin in the symbol list (/api/symbols) the market list is missing. Arrows move, Enter or a tap opens one.
+function cbMatches() {
+  const q = CB.q.trim().toUpperCase(); if (!q) return [];
+  const rows = cbBoard(), have = new Set(rows.map(r => r.s));
+  if (!SYMS) loadSyms(); for (const [s, n] of (SYMS || []).filter(x => x[2] === 'CRYPTO' && !have.has(x[0]))) { rows.push({ s }); if (n && !CB.names[s]) CB.names[s] = String(n).replace(/\s*\/\s*US Dollar$/i, ''); }
+  const rank = r => tick(r.s) === q ? 0 : tick(r.s).startsWith(q) ? 1 : coinName(r.s).toUpperCase().startsWith(q) ? 2 : 3;
+  return rows.filter(r => tick(r.s).includes(q) || coinName(r.s).toUpperCase().includes(q)).sort((a, z) => rank(a) - rank(z) || (z.vol || 0) - (a.vol || 0)).slice(0, 8);
+}
+function cbSearch() {
+  const box = $('#cb-sr'), inp = $('#cb-q'); if (!box) return;
+  const L = cbMatches(); CB.qi = Math.min(CB.qi, Math.max(0, L.length - 1));
+  if (!CB.q.trim()) { box.hidden = true; inp.setAttribute('aria-expanded', 'false'); return; }
+  box.innerHTML = L.length ? L.map((r, i) => `<button type="button" role="option" class="cbsri" data-cbpick="${esc(r.s)}" aria-selected="${i === CB.qi}">${coinIcon(r.s, 28)}<span><b>${esc(coinName(r.s))}</b><em>${esc(tick(r.s))}</em></span><span class="cbsrp"><b>${r.p ? usd(r.p) : ''}</b>${r.chg24 == null ? '' : `<em class="${r.chg24 >= 0 ? 'cbup' : 'cbdn'}">${r.chg24 >= 0 ? '↗' : '↘'} ${Math.abs(r.chg24).toFixed(2)}%</em>`}</span></button>`).join('')
+    : `<div class="cbsrn">No coin matches “${esc(CB.q.trim())}”.${CB.all?.board || SYMS ? '' : ' Still loading the full list…'}</div>`;
+  box.hidden = false; inp.setAttribute('aria-expanded', 'true');
+}
+function cbPick(s) { CB.q = ''; CB.qi = 0; const inp = $('#cb-q'); if (inp) { inp.value = ''; inp.blur(); } cbSearch(); cbSelect(s); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+document.addEventListener('input', e => { if (e.target.id === 'cb-q') { CB.q = e.target.value; CB.qi = 0; cbLoadAll(); cbSearch(); } });
+document.addEventListener('focusin', e => { if (e.target.id === 'cb-q') { loadSyms(); cbLoadAll(); cbSearch(); } });
+document.addEventListener('focusout', e => { if (e.target.id === 'cb-q') setTimeout(() => { if (document.activeElement?.id !== 'cb-q' && $('#cb-sr')) $('#cb-sr').hidden = true; }, 150); });
+document.addEventListener('mousedown', e => { const b = e.target.closest('[data-cbpick]'); if (b) { e.preventDefault(); cbPick(b.dataset.cbpick); } });
 document.addEventListener('keydown', e => {
   if (e.target.id !== 'cb-q') return;
-  if (e.key === 'Escape') { CB.q = e.target.value = ''; cbMkt(); }
-  if (e.key === 'Enter') { const r = $('#cb-mkt tr[data-cbsel]'); if (r) { cbSelect(r.dataset.cbsel); window.scrollTo({ top: 0, behavior: 'smooth' }); } }
+  const L = $$('#cb-sr [data-cbpick]');
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (!L.length) return; CB.qi = (CB.qi + (e.key === 'ArrowDown' ? 1 : -1) + L.length) % L.length; L.forEach((b, i) => b.setAttribute('aria-selected', i === CB.qi)); }
+  if (e.key === 'Escape') { CB.q = e.target.value = ''; cbSearch(); }
+  if (e.key === 'Enter' && L[CB.qi]) { e.preventDefault(); cbPick(L[CB.qi].dataset.cbpick); }
 });
 function cbTrade() {
   const el = $('#cb-trade'); const px = cbRow(CB.sel)?.p || CB.data?.bars?.at(-1)?.c;
