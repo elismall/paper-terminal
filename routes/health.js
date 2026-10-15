@@ -1,5 +1,5 @@
 import { feeMode, FEES } from '../lib/fees.js';
-import { json, env, hasAlpaca, authorized, alpaca } from '../lib/core.js';
+import { json, env, hasAlpaca, authorized, alpaca, stockSwingOn } from '../lib/core.js';
 import { tradingMode } from '../lib/trade.js';
 import { pushReady, probeStore } from '../lib/notify.js';
 import { dcaTraining, trainingSummary } from '../lib/dca.js';
@@ -74,7 +74,7 @@ export async function GET(req) {
     cron: !!env('CRON_SECRET'),
     ...(signedIn ? { trading: tradingMode(), store: !!env('BLOB_READ_WRITE_TOKEN'), lastRun: await lastRun().then(l => l?.at ? { at: l.at, slot: l.slot || null } : null).catch(() => null) } : {}), // v0.17.1 setup check: paper or live, storage, last scheduled run (signed-in devices only)
     app: env('APP_NAME') || APP_NAME, guide: GUIDE_URL || null,
-    ...(signedIn ? { passStrong: env('DASH_PASSCODE').length >= 12, botPaused: env('BOT_PAUSED') === 'true', jev: jevStatus(), cryptoSwing: cryptoSwingOn() } : {}),
+    ...(signedIn ? { passStrong: env('DASH_PASSCODE').length >= 12, botPaused: env('BOT_PAUSED') === 'true', jev: jevStatus(), cryptoSwing: cryptoSwingOn(), stockSwing: stockSwingOn() } : {}),
     version: VERSION,
     time: new Date().toISOString(),
   }, { priv: true });

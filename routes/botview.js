@@ -1,4 +1,4 @@
-import { json, authorized, hasAlpaca, needKeys, fail, bars, swingEval, round } from '../lib/core.js';
+import { json, authorized, hasAlpaca, needKeys, fail, bars, swingEval, round, stockSwingOn } from '../lib/core.js';
 import { pget, ordersSince, realPositions } from '../lib/trade.js';
 import { nyDate, weekdaysBetween, flatOpen, exitsOf, origStop, RULES } from '../lib/botcore.js';
 import { parseCry, flat } from '../lib/cryptobot.js';
@@ -186,7 +186,7 @@ export async function GET(req) {
     return json({
       at: now.toISOString(), market: { open: clock.is_open, next_open: clock.next_open, next_close: clock.next_close }, equity: +acct.equity,
       today: { stocks: placed('tbbot'), crypto: placed('tbcry'), cryptoBuys: lists.crypto.length, dca: orders.filter(o => parseDca(o.client_order_id)?.kind === 'b' && +o.filled_qty > 0 && nyDate(o.filled_at) === todayNY).length, goal: RULES.minTrades, cap: RULES.maxNewPerDay, season: { n: SEASON.n, label: SEASON.label, since: SEASON.since, start: SEASON.start }, closed: closedToday.length, closedPnl: round(closedToday.reduce((a, e) => a + (e.pnl || 0), 0)), lists },
-      cryptoSwing: cryptoSwingOn(), dcaOpenPnl: round(dca.reduce((a, d) => a + (d.pl || 0), 0)),
+      cryptoSwing: cryptoSwingOn(), stockSwing: stockSwingOn(), dcaOpenPnl: round(dca.reduce((a, d) => a + (d.pl || 0), 0)),
       openPnl: round(trades.reduce((a, t) => a + t.pl, 0)), trades, dca: dcaSum, events: ev.slice(0, 80),
     }, { priv: true });
   } catch (e) { return fail(e, 'botview'); }

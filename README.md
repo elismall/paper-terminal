@@ -178,6 +178,7 @@ arrow), then **Install**.
 | `JEV_MODEL` | Which Jev version to ask. Leave it empty unless TypeSafe tells you a new name | Free |
 | `NEWS_MODE` | What the news check does. Leave it empty (or `shadow`) and news is only written down next to each trade. `gate` lets bad news (an offering, a downgrade) skip a stock trade. `off` turns news off | Free |
 | `LEVERAGE_MODE` | What the crypto crowding check does. Leave it empty (or `shadow`) and it is only written down. `gate` holds back new crypto DCA deals when too many traders are betting on a rise with borrowed money. `off` turns it off | Free |
+| `STOCK_SWING` | `on` lets the stock swing bot buy stocks. Leave it empty and it only records "practice picks" (what it would have bought, graded on the Benchmark tab) while the ETF DCA bot keeps buying. Stocks it already owns keep their stop and target | Free |
 | `CRYPTO_SWING` | `on` lets the crypto swing bot open new trades. Leave it empty and crypto is only bought through the DCA bot | Free |
 | `VAPID_SUBJECT` | The contact sent along with phone notifications, like `mailto:you@example.com`. Leave it empty and your app's own address is used | Free |
 
