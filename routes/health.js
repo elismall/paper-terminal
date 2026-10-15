@@ -46,6 +46,8 @@ async function feedProbe() {
 }
 // v0.17.0: every probe needs a signed-in device (several call paid APIs or run for minutes); without one the basic
 // true/false fields still answer. passStrong = the passcode is 12+ characters (the length only, never the value).
+// v0.20.0 (audit #11): passStrong, botPaused, the AI filter and crypto swing are for signed-in devices only (passStrong told a
+// stranger when guessing was worth trying).
 const PROBES = ['store', 'jev', 'news', 'dca', 'signals', 'hist', 'feeds', 'fees', 'small', 'lab'];
 export async function GET(req) {
   const asked = new URL(req.url).searchParams.get('probe'), signedIn = authorized(req, { strict: true });
@@ -55,7 +57,6 @@ export async function GET(req) {
     ok: true,
     locked: !!env('DASH_PASSCODE'),
     authorized: signedIn,
-    passStrong: env('DASH_PASSCODE').length >= 12,
     alpaca: hasAlpaca(),
     fred: !!env('FRED_API_KEY'),
     sec: !!env('SEC_USER_AGENT'),
@@ -73,9 +74,7 @@ export async function GET(req) {
     cron: !!env('CRON_SECRET'),
     ...(signedIn ? { trading: tradingMode(), store: !!env('BLOB_READ_WRITE_TOKEN'), lastRun: await lastRun().then(l => l?.at ? { at: l.at, slot: l.slot || null } : null).catch(() => null) } : {}), // v0.17.1 setup check: paper or live, storage, last scheduled run (signed-in devices only)
     app: env('APP_NAME') || APP_NAME, guide: GUIDE_URL || null,
-    botPaused: env('BOT_PAUSED') === 'true',
-    jev: jevStatus(),
-    cryptoSwing: cryptoSwingOn(),
+    ...(signedIn ? { passStrong: env('DASH_PASSCODE').length >= 12, botPaused: env('BOT_PAUSED') === 'true', jev: jevStatus(), cryptoSwing: cryptoSwingOn() } : {}),
     version: VERSION,
     time: new Date().toISOString(),
   }, { priv: true });

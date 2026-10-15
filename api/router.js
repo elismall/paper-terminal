@@ -32,6 +32,7 @@ import * as swing from '../routes/swing.js';
 import * as symbols from '../routes/symbols.js';
 import * as session from '../routes/session.js';
 import * as tick from '../routes/tick.js';
+import { refreshSignOut } from '../lib/authguard.js';
 
 const R = { account, bars, benchmark, bot, 'bot-mid': botMid, 'bot-pm': botPm, 'bot-crypto': botCrypto, 'bot-check': botCheck, botview, brief, catalyst, control, crypto, dcalab, gapcheck, health, hist, history, intraday, jev, longterm, macro, news, options, order, performance, push, quotes, session, swing, symbols, tick };
 const notFound = () => json({ error: 'not_found', message: 'Unknown API route' }, 404);
@@ -43,14 +44,18 @@ function sameSite(req) {
   const origin = req.headers.get('origin'); if (!origin) return true; // non-browser callers (cron, curl) carry no cookie anyway
   try { return new URL(origin).host === new URL(req.url).host || new URL(origin).host === req.headers.get('x-forwarded-host'); } catch { return false; }
 }
+// v0.20.0 (audit #13): GETs that run something (?run=1 places trades on the bot routes; hist, dcalab and gapcheck run jobs) get the
+// same check, so they never depend on the SameSite cookie alone. Cron callers send no Origin or Sec-Fetch-Site and pass.
+const acts = (u) => u.searchParams.has('run') || u.searchParams.has('dry');
 const handle = (method) => async (req) => {
-  if (method !== 'GET' && !sameSite(req)) return json({ error: 'forbidden', message: 'Cross-site request refused.' }, 403);
   const u = new URL(req.url);
+  if ((method !== 'GET' || acts(u)) && !sameSite(req)) return json({ error: 'forbidden', message: 'Cross-site request refused.' }, 403);
   const name = (u.searchParams.get('__p') || u.pathname.replace(/^\/api\//, '')).split('/')[0];
   const mod = Object.hasOwn(R, name) ? R[name] : null; // v0.18.1: own keys only ('__proto__', 'constructor' are not routes)
   if (!mod || name === 'router') return notFound();
   const fn = mod[method];
   if (!fn) return json({ error: 'method_not_allowed' }, 405);
+  await refreshSignOut(req).catch(() => null); // v0.20.0: "Sign out everywhere" reaches other instances (signed-in requests only)
   return fn(req);
 };
 export const GET = handle('GET');

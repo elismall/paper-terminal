@@ -1,5 +1,5 @@
 // Paper Terminal front end, part 3f: daily scoreboard history on the Benchmark tab (v0.10.0; bull-run core column v0.11.0). One dated row per day, saved by the
-// evening crypto run (lib/history.js). "Copy as Markdown" gives the same table docs/RESULTS-LOG.md keeps in the repo.
+// evening crypto run (lib/history.js). "Copy as Markdown" gives the same table as text, to paste into notes or another LLM.
 SCHED.history = 3e5; NEED.perf.push('history');
 const HS = { busy: false, note: '' };
 function historyView(H) {
