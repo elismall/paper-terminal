@@ -53,6 +53,27 @@ The 5-coin run is not a fair test of the coin list or bull-run mode. Cause found
 |---|---|---|---|---|
 | 2026-09-28 6:59 PM | 0.11.0 | BTC −7.1, ETH +11, SOL +11, PEPE +11 (234 coins listed) | mixed (dollar −0.56, M2 growth +0.27, real yield +0.65 over 3 months) | uptrend: close 84,457.95 over 200-day 71,075.35, 50-day 76,105.75. Bull-run mode still off until the lab runs |
 
+## Live paper scoreboard (Benchmark tab, copied from Eli's screenshots 2026-10-15)
+
+Real paper trades, not backtests. Live site was still on v0.17.1 for this whole window.
+
+| Day (ET) | Equity | Day P&L | Swing closed | DCA closed | Meme closed |
+|---|---|---|---|---|---|
+| 2026-09-28 | $98,835 | −$1,143 | 5 · −$310 | 4 · +$11 | 1 · +$7.30 |
+| 2026-09-29 | $98,867 | +$203 | 0 | 5 · +$5.50 | 1 · +$0.38 |
+| 2026-10-01 to 10-05 | $98,698 | $0 | 0 | 0 | 0 (nothing open: bot idle, cause unknown) |
+| 2026-10-06 | $98,687 | −$11 | 0 | 0 | 0 |
+| 2026-10-08 | $97,864 | −$688 | 2 · −$475 | 3 · −$45 | 2 · −$61 |
+| 2026-10-09 | $98,193 | +$368 | 0 | 3 · +$18 | 0 |
+| 2026-10-11 | $98,455 | +$208 | 0 | 3 · +$59 | 1 · +$17 |
+| 2026-10-12 | $98,034 | −$214 | 0 | 5 · +$74 | 2 · +$29 |
+| 2026-10-13 | $97,724 | −$220 | 6 · −$722 | 1 · +$54 | 1 · +$54 |
+| 2026-10-15 2:40 PM | $94,132 | +$116 | | | 3 stock + 14 crypto positions open, −$302 open P&L |
+
+Totals 9/28 to 10/13: swing 13 trades −$1,507; DCA 24 deals +$176.50; meme 8 deals +$46.68. Equity fell $3,592 between the
+10/13 snapshot and 10/15 with only −$302 open P&L, so something closed at a loss on 10/14 or money moved (not yet explained).
+The DCA crypto settings changed five times in this window (daily retraining).
+
 ## Economic calendar snapshots
 
 | When (ET) | Version | Next 14 days |

@@ -206,6 +206,15 @@ with scope "full".
 - Not verifiable there: market data, Blob and bots against real services (no Alpaca keys or Blob token, and the sandbox blocks
   the hosts above). The v0.20.0 storage and order paths are covered by tests with a faked network only.
 
+## Before real money (2026-10-15)
+Eli asked to start live trading soon. Going live is Eli's own step in Vercel (README "Going live"); never set `TRADING_MODE`,
+`LIVE_*` or live keys for him. What the paper record shows so far is in `docs/RESULTS-LOG.md` ("Live paper scoreboard"): the
+swing bots lost money on closed trades, DCA made a little, and DCA settings changed several times. Bar for a yes:
+1. v0.20.0 (or later) actually running on the live site (it showed v0.17.1 on 2026-10-12; check Settings → Setup checklist).
+2. 4+ weeks of paper on that version with no unexplained equity drops and no days where the bot sat idle by mistake.
+3. Paper results close to or better than buy-and-hold over the same weeks, with smaller drops.
+4. Start live with a small `LIVE_MAX_USD`; consider swing bots off until their paper record turns positive.
+
 ## Known drift and open items
 - v0.19.0 whole-market list: not yet checked against live Alpaca (the cloud sandbox blocks it). Check how many pages the
   multi-coin bar download takes (if it is ~40 per timeframe, the list uses a big share of the 200-a-minute data budget the bots
@@ -240,19 +249,10 @@ with scope "full".
 
 ### Audit findings (first pass, 2026-10-02; GitHub issues labeled `audit`)
 
+All but #9 were fixed by v0.20.0 (PR #18) and closed on 2026-10-15.
+
 | Issue | Severity | Finding | Status |
 |---|---|---|---|
-| [#2](https://github.com/elismall/paper-terminal/issues/2) | high | Kill switch fails open when the Blob read fails | fixed in v0.20.0, closes on merge |
-| [#3](https://github.com/elismall/paper-terminal/issues/3) | high | One failed Blob read wipes stored history and push devices | fixed in v0.20.0, closes on merge |
-| [#4](https://github.com/elismall/paper-terminal/issues/4) | high | Overlapping bot runs can duplicate orders and double the live cap | fixed in v0.20.0, closes on merge |
-| [#5](https://github.com/elismall/paper-terminal/issues/5) | high | Passcode lockout can be bypassed with parallel guesses | fixed in v0.20.0, closes on merge |
-| [#6](https://github.com/elismall/paper-terminal/issues/6) | medium | DCA dip buys keep firing while paused or in drawdown | fixed in v0.20.0, closes on merge |
-| [#7](https://github.com/elismall/paper-terminal/issues/7) | medium | Live cap undercounts and misses some order shapes | fixed in v0.20.0, closes on merge |
-| [#8](https://github.com/elismall/paper-terminal/issues/8) | medium | Daily backup cron misses the 7 PM evening run in winter | fixed in v0.20.0, closes on merge |
 | [#9](https://github.com/elismall/paper-terminal/issues/9) | medium | Account data and push keys live in a public Blob store | open: needs a private store (Eli) |
-| [#10](https://github.com/elismall/paper-terminal/issues/10) | medium | Anyone can lock the owner out of signing in on new devices | fixed in v0.20.0 (devices used before); closes on merge |
-| [#11](https://github.com/elismall/paper-terminal/issues/11) | low | Health check tells strangers whether the passcode is weak | fixed in v0.20.0, closes on merge |
-| [#12](https://github.com/elismall/paper-terminal/issues/12) | low | Core Alpaca, order and Blob fetches have no timeout | fixed in v0.20.0, closes on merge |
-| [#13](https://github.com/elismall/paper-terminal/issues/13) | low | Hardening: sign-out, state-changing GETs, push hosts, storage cleanup | fixed in v0.20.0, closes on merge |
 
 Close the issue and remove its row when the fix merges; when a fix lands, add a test to `test/` so it stays fixed.
