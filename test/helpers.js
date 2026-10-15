@@ -3,7 +3,7 @@ export const HOST = 'https://pt.test';
 export const PASS = 'correct horse battery staple';
 export const CRON = 'c'.repeat(48);
 const KEYS = ['DASH_PASSCODE', 'CRON_SECRET', 'ALPACA_KEY_ID', 'ALPACA_SECRET_KEY', 'BLOB_READ_WRITE_TOKEN', 'VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY',
-  'TRADING_MODE', 'LIVE_CONFIRM', 'ALPACA_LIVE_KEY_ID', 'ALPACA_LIVE_SECRET_KEY', 'LIVE_MAX_USD', 'BOT_PAUSED', 'TYPESAFE_API_KEY', 'FRED_API_KEY'];
+  'TRADING_MODE', 'LIVE_CONFIRM', 'ALPACA_LIVE_KEY_ID', 'ALPACA_LIVE_SECRET_KEY', 'LIVE_MAX_USD', 'BOT_PAUSED', 'TYPESAFE_API_KEY', 'FRED_API_KEY', 'STOCK_SWING'];
 // A clean environment: only the keys given are set (Blob and push stay off, so nothing reaches the network).
 export function setEnv(vars = {}) { for (const k of KEYS) delete process.env[k]; Object.assign(process.env, vars); }
 export const signedOut = () => setEnv({ DASH_PASSCODE: PASS, CRON_SECRET: CRON, ALPACA_KEY_ID: 'PKTEST', ALPACA_SECRET_KEY: 'sk-test' });

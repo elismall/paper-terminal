@@ -5,7 +5,7 @@ the code, the rules that keep it safe, and what is open. **Keep it current:** an
 paths or the version updates this file in the same commit. The `steward` skill (`.claude/skills/steward/SKILL.md`) says how,
 and `npm run audit` fails if the version below is stale.
 
-**Current version:** 0.20.0 (`lib/version.js`; bump it with every deploy). Owner: Eli (`elismall`).
+**Current version:** 0.21.0 (`lib/version.js`; bump it with every deploy). Owner: Eli (`elismall`).
 Repo: https://github.com/elismall/paper-terminal
 
 ## What it is
@@ -76,7 +76,7 @@ No build step, no npm dependencies, Node 22 (`package.json` engines), ES modules
   new entry (stock, crypto swing, DCA base order, DCA dip buy, bull-run core buy) the bot calls `recentlyOrdered` in
   `lib/trade.js` (Alpaca's own order list for that symbol, last 15-30 minutes) and stands down if a live order with the same id
   prefix exists, or if the check fails. A request that times out is never followed by a "close the whole position" fallback.
-- Bots: stock swing (`lib/botcore.js`), crypto swing + protection (`lib/cryptobot.js`, entries off unless `CRYPTO_SWING=on`),
+- Bots: stock swing (`lib/botcore.js`, buying off unless `STOCK_SWING=on` since v0.21.0; while off it records practice picks), crypto swing + protection (`lib/cryptobot.js`, entries off unless `CRYPTO_SWING=on`),
   DCA deals (`lib/dca.js`), the $100 plan (`lib/small.js`).
 - Kill switch: `lib/control.js` + `routes/control.js` (pause / resume / emergency stop), plus `BOT_PAUSED=true` in Vercel. Fails
   closed since v0.20.0: an unreadable `control/mode.json` means "no new trades this run" (level 3), the app shows "Can't read",
@@ -148,6 +148,8 @@ What `npm run audit` covers:
 - `test/cryptomarket.test.js`: the Crypto tab's whole-market list (`/api/crypto?all=1`) with Alpaca faked: every tradable USD
   coin once with its name, bar pages followed to the end, no plays, reads only; without keys, the bot's coins and no trading-API call;
   also through the router the way `vercel.json` rewrites it (`/api/router?__p=crypto&all=1`).
+- `test/stockswing.test.js`: `STOCK_SWING` is off unless exactly `on`; a pick orders only when on and not a dry run; practice picks
+  are saved with their entry price and graded apart from real trades.
 - `test/devserver.test.js`: the dev server refuses dotfiles, repo-only files, traversal and bad escapes, and keeps running.
 
 ## Outside hosts the server calls
@@ -162,6 +164,14 @@ as a GitHub issue labeled `audit`. Run it on every change to auth, orders, sizin
 with scope "full".
 
 ## Status as of 2026-10-15
+- v0.21.0 (Eli's pick, 2026-10-15) adds `STOCK_SWING`: stock swing **buying is off unless it is `on`**, for every copy on deploy.
+  While off, entering runs scan and pick with the same rules (training, score bar, gap check, Jev, news, sizing), but each pick
+  becomes a `practice` row in the candidate ledger instead of an order (`stockEntryMode` in `lib/botcore.js`; `stockSwingOn` in
+  `lib/core.js`). The evening tick grades them like every candidate, and the Benchmark tab's candidate ledger shows a "Practice
+  picks" row in R, which is the evidence for turning it back on. A symbol picked again while its earlier practice pick's window is
+  still open counts once (`practiceHeld`), as a real bot would have held it. Open swing trades keep their exits, breakeven and re-arm; the
+  ETF DCA bot is unchanged. `/api/botview`, signed-in `/api/health` and the daily snapshot carry `stockSwing`; the Bot tab says
+  it is off. Guard: `test/stockswing.test.js`.
 - v0.20.0 (PR #18, merged 2026-10-15) fixes audit issues #2-#8 and #10-#13 in one change: fail-closed kill switch and run lock,
   strict Blob reads for every read-modify-write, a duplicate-order check before every bot entry, DCA dip buys gated by pause,
   the tighter live cap, the lockout rework and sign out everywhere, quieter `/api/health`, timeouts, the evening catch-up and
@@ -213,9 +223,13 @@ swing bots lost money on closed trades, DCA made a little, and DCA settings chan
 1. v0.20.0 (or later) actually running on the live site (it showed v0.17.1 on 2026-10-12; check Settings → Setup checklist).
 2. 4+ weeks of paper on that version with no unexplained equity drops and no days where the bot sat idle by mistake.
 3. Paper results close to or better than buy-and-hold over the same weeks, with smaller drops.
-4. Start live with a small `LIVE_MAX_USD`; consider swing bots off until their paper record turns positive.
+4. Start live with a small `LIVE_MAX_USD`. Stock swing buying is off by default since v0.21.0; turn it on (`STOCK_SWING=on`)
+   only if its practice picks on the Benchmark tab show a positive average R over 20+ graded picks.
 
 ## Known drift and open items
+- v0.21.0 practice picks: they don't count toward the 6-a-day cap across runs (only real orders do), so a day can log more
+  practice picks than the bot would have bought, and the 15-position and no-margin limits only count real positions. Each symbol is
+  logged once a day, and repeats across days are dropped from the score while its first window is open. The practice log has not run against live data yet.
 - v0.19.0 whole-market list: not yet checked against live Alpaca (the cloud sandbox blocks it). Check how many pages the
   multi-coin bar download takes (if it is ~40 per timeframe, the list uses a big share of the 200-a-minute data budget the bots
   share while the Crypto tab is open), whether one tradable coin with no data makes Alpaca reject the whole multi-coin request,
