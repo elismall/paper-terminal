@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { setEnv, signedOut, fakeFetch, req } from './helpers.js';
 import { CRYPTO_UNIVERSE, PACE } from '../lib/core.js';
 import { GET, _resetMarket } from '../routes/crypto.js';
+import * as router from '../api/router.js';
 
 const EXTRA = ['PEPE/USD', 'ONDO/USD'];
 const assets = [...CRYPTO_UNIVERSE, ...EXTRA].map(s => ({ symbol: s, name: `${s === 'PEPE/USD' ? 'Pepe' : s.replace('/USD', '')} / US Dollar`, tradable: true }))
@@ -58,6 +59,14 @@ test('whole market downloads once a minute per instance and refuses cache-bustin
   assert.equal((await GET(req('/api/crypto?all=1&z=1'))).status, 400);
   assert.equal(net.calls.filter(c => c.url.includes('/v2/assets')).length, 1);
   assert.equal(net.calls.filter(c => c.url.includes('/crypto/us/bars')).length, 4, 'two pages per timeframe, once');
+});
+
+test('whole market works through the vercel.json rewrite (/api/router?__p=crypto)', async () => {
+  net = fakeFetch({ '/v2/assets': assets, '/crypto/us/snapshots': snaps, '/crypto/us/bars': barsPage });
+  const r = await router.GET(req('/api/router?__p=crypto&all=1'));
+  assert.equal(r.status, 200);
+  assert.ok((await r.json()).board.length > CRYPTO_UNIVERSE.length);
+  assert.equal((await router.GET(req('/api/router?__p=crypto&all=1&z=1'))).status, 400, 'still no cache-busting copies');
 });
 
 test('a download cut short never shows partial bars as complete', async () => {

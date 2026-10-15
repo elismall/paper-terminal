@@ -7,7 +7,7 @@ export async function GET(req) {
   if (!authorized(req)) return denied();
   const u = new URL(req.url).searchParams;
   if (u.get('all') === '1') {
-    if ([...u.keys()].some(k => k !== 'all')) return json({ error: 'bad_request', message: 'Use ?all=1 on its own.' }, { status: 400 }); // no cache-busting copies
+    if ([...u.keys()].some(k => k !== 'all' && k !== '__p')) return json({ error: 'bad_request', message: 'Use ?all=1 on its own.' }, { status: 400 }); // no cache-busting copies (v0.19.1: __p is the vercel.json rewrite's own key)
     if (!M.p || Date.now() - M.at > 6e4) Object.assign(M, { at: Date.now(), p: market() }); // one download a minute per instance, shared by every caller
     return (await M.p).clone();
   }

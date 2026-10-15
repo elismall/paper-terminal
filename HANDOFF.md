@@ -28,6 +28,7 @@ No build step, no npm dependencies, Node 22 (`package.json` engines), ES modules
 | `scripts/dev-server.mjs` | Local server, `npm run dev`. |
 | `.claude/agents/adversary-auditor.md` | The adversarial auditor agent (see "Auditing"). |
 | `.claude/skills/steward/SKILL.md` | How to manage changes, releases, PRs and this file. |
+| `docs/` | Notes carried over from the original `elismall/trading-bot` repo: the results log, Jev notes, the blueprint, old test runs, and `docs/legacy/` (its old tests, handoff and README). History, not run by anything; `docs/README.md` says what each file is. |
 | `.vercelignore` | Repo-only files the deployed site must not serve (Vercel serves every other file publicly). |
 
 ## Auth model (lib/core.js, lib/authguard.js, routes/session.js)
@@ -145,7 +146,8 @@ What `npm run audit` covers:
   matches `lib/version.js`; `.vercelignore` covers repo-only files; every file parses.
   Also: README names every setting in `.env.example`, and no export in `lib/` or `routes/` goes unused.
 - `test/cryptomarket.test.js`: the Crypto tab's whole-market list (`/api/crypto?all=1`) with Alpaca faked: every tradable USD
-  coin once with its name, bar pages followed to the end, no plays, reads only; without keys, the bot's coins and no trading-API call.
+  coin once with its name, bar pages followed to the end, no plays, reads only; without keys, the bot's coins and no trading-API call;
+  also through the router the way `vercel.json` rewrites it (`/api/router?__p=crypto&all=1`).
 - `test/devserver.test.js`: the dev server refuses dotfiles, repo-only files, traversal and bad escapes, and keeps running.
 
 ## Outside hosts the server calls
@@ -159,8 +161,8 @@ on <area or diff>". It reads only, reports verified findings with severity, a fi
 as a GitHub issue labeled `audit`. Run it on every change to auth, orders, sizing, the kill switch, cron or storage, and weekly
 with scope "full".
 
-## Status as of 2026-10-09
-- v0.20.0 (PR #18, open, not merged) fixes audit issues #2-#8 and #10-#13 in one change: fail-closed kill switch and run lock,
+## Status as of 2026-10-15
+- v0.20.0 (PR #18, merged 2026-10-15) fixes audit issues #2-#8 and #10-#13 in one change: fail-closed kill switch and run lock,
   strict Blob reads for every read-modify-write, a duplicate-order check before every bot entry, DCA dip buys gated by pause,
   the tighter live cap, the lockout rework and sign out everywhere, quieter `/api/health`, timeouts, the evening catch-up and
   the 00:40 UTC backup cron, push host allowlist, storage cleanup. Also: schedule copy in the app and file headers now says
@@ -172,6 +174,18 @@ with scope "full".
   retry after a timed-out exit sell looked "not sent"; a manual noon crypto run marked the evening done; unfinished buys such
   as pending_cancel were left out of the live cap). Also carries the kill-switch fix from closed PR #15: `migrateMode` no
   longer writes "run" over a real pause when the guessed store address 404s but the list shows `control/mode.json`.
+- v0.19.1 (PR #20, merged 2026-10-15) fixes the v0.19.0 crypto search, which Eli could not find on the live site. Two causes: (1) the search box sat in the
+  Market card at the bottom of the Crypto tab, below the chart, so it was out of sight; it is now the first card on the tab, with
+  a drop-down of matches (name, ticker, price, 24h; arrows + Enter or a tap opens the coin) that also covers coins from
+  `/api/symbols` the market list lacks. The Market list no longer filters by the search. (2) `/api/crypto?all=1` refused every
+  request through the `vercel.json` rewrite, because its anti-cache-busting check rejected the rewrite's own `__p` key (400), so
+  the list fell back to the 14 bot coins; it now allows `__p`, tested through `api/router.js`. Fix (2) was first found by the
+  weekly audit (PR #19) and is folded in here. Not yet confirmed on a deploy.
+- Two repos (2026-10-12): `elismall/trading-bot` is the original (v0.4.0 to v0.13.2, last change 2026-09-29); this repo started
+  2026-10-02 as a single v0.17.1 commit and is the only one worked on. Its `docs/` folder (results log, Jev notes, blueprint,
+  test runs) and old `tests/`, `HANDOFF.md` and `README.md` are now in `docs/` and `docs/legacy/` here, so Eli can archive it.
+  The live site still showed v0.17.1 that day: the Vercel project (`tb-terminal`, created 2026-09-25) is probably still linked to
+  trading-bot (not confirmed; the connector cannot read its settings). Eli is relinking it to this repo, production branch `main`.
 - v0.19.0 (PR #17, merged 2026-10-09) adds a search box to the Crypto tab's Market list, and that list is now the whole market: `routes/crypto.js` `?all=1`
   returns every tradable Alpaca `/USD` pair (asset list via `pget`, cached 6 hours per instance; needs keys, else the 14 bot
   coins), with price, 24h/7d/30d change, 24h dollar volume and a 48h sparkline, sorted by volume; CDN cache 60 s. It downloads
@@ -180,7 +194,7 @@ with scope "full".
   cache-busting); a failed asset-list read is retried after 5 minutes. A download cut short blanks the coins whose newest bars
   are missing and sets `partial`, so stale numbers never show as current. Swing plays and the 30-second
   board stay on `CRYPTO_UNIVERSE`, so the bot's coins, signals and trading are unchanged. Client: `js/3-trade-bot-crypto.js`
-  (`cbBoard`, `cbRow`, `cbLoadAll`, the `#cb-q` box; Enter opens the first match). Any coin can be charted and traded by hand
+  (`cbBoard`, `cbRow`, `cbLoadAll`, the `#cb-q` box, moved to the top in v0.19.1). Any coin can be charted and traded by hand
   from the list, as the order ticket already allowed.
 - v0.18.1 (PR #1, merged 2026-10-08) added the audit, CI, the auditor agent, the steward skill, this file, `CLAUDE.md` and the
   dev server; the router dispatches only to its own route names.
